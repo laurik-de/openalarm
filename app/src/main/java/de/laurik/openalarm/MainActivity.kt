@@ -179,12 +179,32 @@ fun CheckSystemPermissions() {
     // Full Screen Intent Check (Android 14+)
     var showFullScreenDialog by remember { mutableStateOf(false) }
 
+    // Xiaomi Specific Guidance
+    var showXiaomiDialog by remember { mutableStateOf(false) }
+    val prefs = context.getSharedPreferences("openalarm_prefs", Context.MODE_PRIVATE)
+
     LaunchedEffect(Unit) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
             if (!alarmManager.canScheduleExactAlarms()) {
                 showExactAlarmDialog = true
             }
+        }
+        
+        // Android 14 full screen intent property
+        if (Build.VERSION.SDK_INT >= 34) {
+            val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            if (!nm.canUseFullScreenIntent()) {
+                showFullScreenDialog = true
+            }
+        }
+
+        // Xiaomi detection
+        val manufacturer = Build.MANUFACTURER.lowercase()
+        val isXiaomi = manufacturer.contains("xiaomi") || manufacturer.contains("poco") || manufacturer.contains("redmi")
+        val alreadyShown = prefs.getBoolean("xiaomi_guidance_shown", false)
+        if (isXiaomi && !alreadyShown) {
+            showXiaomiDialog = true
         }
     }
 
@@ -231,6 +251,35 @@ fun CheckSystemPermissions() {
             }
         )
     }
+
+    if (showXiaomiDialog) {
+        AlertDialog(
+            onDismissRequest = { showXiaomiDialog = false },
+            title = { Text(stringResource(R.string.dialog_title_xiaomi_fix)) },
+            text = { Text(stringResource(R.string.dialog_msg_xiaomi_fix)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showXiaomiDialog = false
+                    prefs.edit().putBoolean("xiaomi_guidance_shown", true).apply()
+                    try {
+                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                            data = Uri.parse("package:$packageName")
+                        }
+                        context.startActivity(intent)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }) { Text(stringResource(R.string.action_open_settings)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { 
+                    showXiaomiDialog = false 
+                    prefs.edit().putBoolean("xiaomi_guidance_shown", true).apply()
+                }) { Text(stringResource(R.string.action_dismiss)) }
+            }
+        )
+    }
+
 }
 
 @OptIn(ExperimentalFoundationApi::class)

@@ -184,6 +184,7 @@ object NotificationRenderer {
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setFullScreenIntent(fullScreenPending, true)
+            .setContentIntent(fullScreenPending)
             .setContentTitle(title)
             .setCustomContentView(customView)
             .setCustomBigContentView(customView)
@@ -346,6 +347,11 @@ object NotificationRenderer {
         }
         val fullScreenPending = PendingIntent.getActivity(context, id + 14000, fullScreenIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
+        val mainIntent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val mainPending = PendingIntent.getActivity(context, id + 15000, mainIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+
         val finalStopIntent = if (type == "TIMER" && !isRinging) {
             Intent(context, AlarmReceiver::class.java).apply { action = "STOP_SPECIFIC_TIMER"; putExtra("TARGET_ID", id) }
         } else {
@@ -428,7 +434,7 @@ object NotificationRenderer {
             .setCustomContentView(customView)
             .setCustomBigContentView(customView)
             .setCustomHeadsUpContentView(customView)
-            .setContentIntent(fullScreenPending)
+            .setContentIntent(if (actuallyRinging) fullScreenPending else mainPending)
 
         if (type == "TIMER") {
             presets.forEachIndexed { index, seconds ->

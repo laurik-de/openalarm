@@ -308,6 +308,9 @@
     <string name="dialog_title_permission_required">Permission Required</string>
     <string name="dialog_msg_permission_exact_alarm">To ring alarms at the exact time, this app needs the \'Alarms &amp; Reminders\' permission.</string>
     <string name="dialog_msg_permission_full_screen">To show the alarm screen while the phone is locked, please allow \'Full-screen notifications\'.</string>
+    <string name="dialog_title_xiaomi_fix">Xiaomi Permission Required</string>
+    <string name="dialog_msg_xiaomi_fix">For the alarm screen to show while locked on Xiaomi devices, you must manually enable "Show on lock screen" in settings.</string>
+    <string name="action_open_settings">Open Settings</string>
     <string name="title_adjust_next">Adjust next alarm time</string>
     <string name="title_set_time">Set Time</string>
     <string name="title_set_timer">Set Timer</string>
