@@ -47,6 +47,8 @@ fun EditAlarmDialog(
     var ringingScreenMode by remember { mutableStateOf(alarm.ringingScreenMode) }
     var backgroundType by remember { mutableStateOf(alarm.backgroundType) }
     var backgroundValue by remember { mutableStateOf(alarm.backgroundValue) }
+    var hurdleEnabled by remember { mutableStateOf(alarm.hurdleEnabled) }
+    var selectedHurdles by remember { mutableStateOf(alarm.selectedHurdles) }
 
     // Group Selection
     var selectedGroupId by remember { mutableStateOf(alarm.groupId) }
@@ -167,6 +169,10 @@ fun EditAlarmDialog(
                                     onBackgroundTypeChange = { backgroundType = it; showBackgroundPicker = true },
                                     backgroundValue = backgroundValue,
                                     onBackgroundValueChange = { /* picker handles this */ },
+                                    hurdleEnabled = hurdleEnabled,
+                                    onHurdleEnabledChange = { hurdleEnabled = it },
+                                    selectedHurdles = selectedHurdles,
+                                    onSelectedHurdlesChange = { selectedHurdles = it },
                                     globalSnooze = globalSnooze,
                                     globalAutoStop = globalAutoStop,
                                     showDefaultRingingMode = true
@@ -329,7 +335,9 @@ fun EditAlarmDialog(
                                                 isSelfDestroying = isSelfDestroying,
                                                 ringingScreenMode = ringingScreenMode,
                                                 backgroundType = backgroundType,
-                                                backgroundValue = backgroundValue
+                                                backgroundValue = backgroundValue,
+                                                hurdleEnabled = hurdleEnabled,
+                                                selectedHurdles = selectedHurdles
                                             )
                                             if (isNewGroupMode && newGroupName.isNotBlank()) {
                                                 onSave(

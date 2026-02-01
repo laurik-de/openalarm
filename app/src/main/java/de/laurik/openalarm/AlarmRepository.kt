@@ -116,6 +116,13 @@ object AlarmRepository {
         return InternalDataStore.groups.flatMap { it.alarms }.find { it.id == id }
     }
 
+    fun getAlarmFlow(id: Int) = kotlinx.coroutines.flow.flow {
+        while(true) {
+            emit(getAlarm(id))
+            kotlinx.coroutines.delay(1000) // Poll for now, or use snapshotFlow if possible
+        }
+    }
+
     fun addAlarm(context: Context, alarm: AlarmItem) {
 
         if (InternalDataStore.groups.isEmpty()) {

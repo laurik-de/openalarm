@@ -97,6 +97,12 @@ class SettingsRepository(context: Context) {
     private val _defDirectSnooze = MutableStateFlow(prefs.getBoolean("def_alarm_direct_snooze", false))
     val defDirectSnooze: StateFlow<Boolean> = _defDirectSnooze.asStateFlow()
 
+    private val _defHurdleEnabled = MutableStateFlow(prefs.getBoolean("def_hurdle_enabled", false))
+    val defHurdleEnabled: StateFlow<Boolean> = _defHurdleEnabled.asStateFlow()
+
+    private val _defSelectedHurdles = MutableStateFlow(getHurdleTypeList("def_selected_hurdles", emptyList()))
+    val defSelectedHurdles: StateFlow<List<HurdleType>> = _defSelectedHurdles.asStateFlow()
+
     private val _notifyBeforeEnabled = MutableStateFlow(prefs.getBoolean("notify_before_enabled", true))
     val notifyBeforeEnabled: StateFlow<Boolean> = _notifyBeforeEnabled.asStateFlow()
 
@@ -131,6 +137,8 @@ class SettingsRepository(context: Context) {
         _defIsSnoozeEnabled.value = prefs.getBoolean("def_alarm_snooze_enabled", true)
         _defMaxSnoozes.value = prefs.getInt("def_alarm_max_snoozes", -1).takeIf { it >= 0 }
         _defDirectSnooze.value = prefs.getBoolean("def_alarm_direct_snooze", false)
+        _defHurdleEnabled.value = prefs.getBoolean("def_hurdle_enabled", false)
+        _defSelectedHurdles.value = getHurdleTypeList("def_selected_hurdles", emptyList())
         _notifyBeforeEnabled.value = prefs.getBoolean("notify_before_enabled", true)
         _notifyBeforeMinutes.value = prefs.getInt("notify_before_minutes", 120)
     }
@@ -143,6 +151,14 @@ class SettingsRepository(context: Context) {
     private fun getTtsMode(key: String, default: TtsMode): TtsMode {
         val name = prefs.getString(key, null) ?: return default
         return try { TtsMode.valueOf(name) } catch (e: Exception) { default }
+    }
+
+    private fun getHurdleTypeList(key: String, default: List<HurdleType>): List<HurdleType> {
+        val str = prefs.getString(key, null) ?: return default
+        if (str.isBlank()) return emptyList()
+        return try {
+            str.split(",").mapNotNull { try { HurdleType.valueOf(it) } catch(e:Exception){null} }
+        } catch (e: Exception) { default }
     }
 
     private fun getVideoThemeMode(): AppThemeMode {
@@ -291,6 +307,17 @@ class SettingsRepository(context: Context) {
     fun setDefDirectSnooze(enabled: Boolean) {
         prefs.edit().putBoolean("def_alarm_direct_snooze", enabled).apply()
         _defDirectSnooze.value = enabled
+    }
+
+    fun setDefHurdleEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("def_hurdle_enabled", enabled).apply()
+        _defHurdleEnabled.value = enabled
+    }
+
+    fun setDefSelectedHurdles(hurdles: List<HurdleType>) {
+        val str = hurdles.joinToString(",") { it.name }
+        prefs.edit().putString("def_selected_hurdles", str).apply()
+        _defSelectedHurdles.value = hurdles
     }
 
     fun setNotifyBeforeEnabled(enabled: Boolean) {

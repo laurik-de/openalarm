@@ -100,6 +100,23 @@
     <string name="setting_pick_color">Select Color</string>
     <string name="setting_pick_top_color">Top Color</string>
     <string name="setting_pick_bottom_color">Bottom Color</string>
+    <string name="section_hurdles">Hurdles (Obstacles)</string>
+    <string name="setting_hurdle_enabled">Enable Hurdles</string>
+    <string name="setting_hurdle_enabled_desc">Require solving a task before stopping/snoozing</string>
+    <string name="hurdle_day_of_week">Current Day of Week</string>
+    <string name="hurdle_math_easy">Math: Easy (+ &amp; -)</string>
+    <string name="hurdle_math_medium">Math: Medium (* &amp; /)</string>
+    <string name="hurdle_math_difficult">Math: Difficult (Complex)</string>
+    <string name="hurdle_game">Reaction Game</string>
+    <string name="label_select_hurdles">Select Hurdles (One will be picked randomly)</string>
+    <string name="hurdle_math_prompt">Solve this:</string>
+    <string name="hurdle_day_prompt">What day is it today?</string>
+    <string name="hurdle_game_prompt">Tap to Start Jumping!</string>
+    <string name="hurdle_game_score">Jumped: %1$d / 5</string>
+    <string name="hurdle_game_hit">Ouch! Try Again (0/5)</string>
+    <string name="hurdle_game_tap_hint">Tap anywhere to Jump</string>
+    <string name="hurdle_math_auto_confirm">Succeeds automatically on correct answer</string>
+    <string name="action_test_hurdle">Test Hurdle</string>
 
     <!-- Timer Configuration -->
     <string name="title_new_timer">New Timer</string>

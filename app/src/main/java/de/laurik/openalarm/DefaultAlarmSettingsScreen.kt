@@ -39,6 +39,9 @@ fun DefaultAlarmSettingsScreen(
     
     // Ringing Screen Defaults
     val ringingMode by viewModel.defaultRingingMode.collectAsState()
+    val hurdleEnabled by viewModel.defHurdleEnabled.collectAsState()
+    val selectedHurdles by viewModel.defSelectedHurdles.collectAsState()
+    
     // For now we'll use placeholder states for these until we add them to SettingsRepo if needed
     var bgType by remember { mutableStateOf("COLOR") }
     var bgValue by remember { mutableStateOf("0xFF000000") }
@@ -100,6 +103,10 @@ fun DefaultAlarmSettingsScreen(
                     onBackgroundTypeChange = { showBackgroundPicker = true },
                     backgroundValue = bgValue,
                     onBackgroundValueChange = { /* picker handles this */ },
+                    hurdleEnabled = hurdleEnabled,
+                    onHurdleEnabledChange = { viewModel.setDefHurdleEnabled(it) },
+                    selectedHurdles = selectedHurdles,
+                    onSelectedHurdlesChange = { viewModel.setDefSelectedHurdles(it) },
                     showRingingMode = false
                 )
                 

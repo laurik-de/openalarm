@@ -35,6 +35,19 @@ class Converters {
     fun fromCustomRingtoneSelectionMode(mode: CustomRingtoneSelectionMode): String = mode.name
     @TypeConverter
     fun toCustomRingtoneSelectionMode(data: String): CustomRingtoneSelectionMode = CustomRingtoneSelectionMode.SINGLE.let { try { CustomRingtoneSelectionMode.valueOf(data) } catch(e:Exception){it} }
+
+    @TypeConverter
+    fun fromHurdleType(type: HurdleType): String = type.name
+    @TypeConverter
+    fun toHurdleType(data: String): HurdleType = HurdleType.MATH_EASY.let { try { HurdleType.valueOf(data) } catch(e:Exception){it} }
+
+    @TypeConverter
+    fun fromHurdleTypeList(list: List<HurdleType>): String = list.joinToString(",") { it.name }
+    @TypeConverter
+    fun toHurdleTypeList(data: String): List<HurdleType> {
+        if (data.isBlank()) return emptyList()
+        return data.split(",").mapNotNull { try { HurdleType.valueOf(it) } catch(e:Exception){null} }
+    }
 }
 
 // 2. DATA ACCESS OBJECT (The SQL commands)
@@ -131,7 +144,7 @@ interface AlarmDao {
 // 3. DATABASE INSTANCE
 @Database(
     entities = [AlarmGroupEntity::class, AlarmItem::class, TimerItem::class, InterruptedItem::class, CustomRingtoneEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -149,7 +162,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "openalarm_db"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
@@ -173,6 +186,17 @@ abstract class AppDatabase : RoomDatabase() {
                 )
                 db.execSQL(
                     "ALTER TABLE alarms ADD COLUMN ringtoneRotationIndex INTEGER NOT NULL DEFAULT 0"
+                )
+            }
+        }
+
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE alarms ADD COLUMN hurdleEnabled INTEGER NOT NULL DEFAULT 0"
+                )
+                db.execSQL(
+                    "ALTER TABLE alarms ADD COLUMN selectedHurdles TEXT NOT NULL DEFAULT ''"
                 )
             }
         }

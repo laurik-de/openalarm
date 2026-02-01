@@ -19,6 +19,8 @@ enum class AlarmType { SOFT, REGULAR, CRITICAL }
 enum class RingingScreenMode { DEFAULT, EASY, CLEAN }
 @Serializable
 enum class CustomRingtoneSelectionMode { SINGLE, RANDOM, ROTATING }
+@Serializable
+enum class HurdleType { DAY_OF_WEEK, MATH_EASY, MATH_MEDIUM, MATH_DIFFICULT, GAME }
 
 // --- ENTITIES (Database Tables) ---
 
@@ -104,7 +106,11 @@ data class AlarmItem(
 
     // Internal
     var lastTriggerTime: Long = 0L,
-    var ringtoneRotationIndex: Int = 0 // Used if ringtone is a folder and mode is ROTATING
+    var ringtoneRotationIndex: Int = 0, // Used if ringtone is a folder and mode is ROTATING
+    
+    // NEW: Hurdles
+    var hurdleEnabled: Boolean = false,
+    var selectedHurdles: List<HurdleType> = emptyList()
 )
 
 @Entity(tableName = "timers")

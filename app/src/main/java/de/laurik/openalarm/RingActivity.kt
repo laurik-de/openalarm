@@ -38,10 +38,17 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.roundToInt
 
+@OptIn(ExperimentalMaterial3Api::class)
 class RingActivity : ComponentActivity() {
 
     private var currentType by mutableStateOf("ALARM")
     private var currentId by mutableStateOf(-1)
+    private var isInterrupted by mutableStateOf(false) // Added
+    
+    // HURDLE STATE
+    private var pendingAction by mutableStateOf<(() -> Unit)?>(null) // Added
+    private var activeHurdle by mutableStateOf<HurdleType?>(null) // Added
+
     private var currentStartTime by mutableLongStateOf(System.currentTimeMillis())
     private var currentLabel by mutableStateOf("")
     private var isRepoLoaded by mutableStateOf(false)
@@ -89,7 +96,7 @@ class RingActivity : ComponentActivity() {
             }
 
             MaterialTheme {
-                val alarm = remember(currentId) { AlarmRepository.getAlarm(currentId) }
+                val alarmState = remember(currentId) { AlarmRepository.getAlarmFlow(currentId) } // Modified
                 
                 if (currentType.equals("TIMER", ignoreCase = true)) {
                     TimerRingingScreen(
@@ -103,17 +110,54 @@ class RingActivity : ComponentActivity() {
                             }
                             startActivity(intent)
                             finish()
-                        }
+                        },
+                        isInterrupted = isInterrupted
                     )
                 } else {
-                    AlarmRingingScreen(
-                        alarm = alarm,
-                        onStop = { stopServiceCommand(currentId) },
-                        onSnooze = { mins -> 
-                            if (mins == null) snoozeAlarm() 
-                            else snoozeAlarmCustom(mins)
+                    val alarm = alarmState.collectAsState(initial = null).value
+                    if (alarm != null) {
+                        Box {
+                            AlarmRingingScreen(
+                                alarm = alarm,
+                                onStop = { 
+                                    if (alarm.hurdleEnabled && alarm.selectedHurdles.isNotEmpty()) {
+                                        pendingAction = { stopServiceCommand(currentId) }
+                                        activeHurdle = alarm.selectedHurdles.random()
+                                    } else {
+                                        stopServiceCommand(currentId)
+                                    }
+                                },
+                                onSnooze = { mins ->
+                                    if (alarm.hurdleEnabled && alarm.selectedHurdles.isNotEmpty()) {
+                                        pendingAction = { 
+                                            if (mins == null) snoozeAlarm() 
+                                            else snoozeAlarmCustom(mins)
+                                        }
+                                        activeHurdle = alarm.selectedHurdles.random()
+                                    } else {
+                                        if (mins == null) snoozeAlarm() 
+                                        else snoozeAlarmCustom(mins)
+                                    }
+                                }
+                            )
+
+                            activeHurdle?.let { hurdle ->
+                                HurdleSolvingScreen(
+                                    hurdleType = hurdle,
+                                    onSolved = {
+                                        val action = pendingAction
+                                        activeHurdle = null
+                                        pendingAction = null
+                                        action?.invoke()
+                                    },
+                                    onCancel = {
+                                        activeHurdle = null
+                                        pendingAction = null
+                                    }
+                                )
+                            }
                         }
-                    )
+                    }
                 }
             }
         }
@@ -133,6 +177,23 @@ class RingActivity : ComponentActivity() {
     }
 
     private fun handleIntent(intent: Intent) {
+        isInterrupted = intent.getBooleanExtra("IS_INTERRUPTED", false) // Added
+        
+        // Handle pending hurdle action from notification
+        val pendingFromNotif = intent.getStringExtra("PENDING_ACTION") // Added
+        if (pendingFromNotif != null) { // Added
+            lifecycleScope.launch { // Added
+                val alarm = AlarmRepository.getAlarm(currentId) // Modified
+                if (alarm?.hurdleEnabled == true && alarm.selectedHurdles.isNotEmpty()) { // Added
+                    activeHurdle = alarm.selectedHurdles.random() // Added
+                    pendingAction = { // Added
+                        if (pendingFromNotif == "STOP") stopServiceCommand(currentId) // Added
+                        else if (pendingFromNotif == "SNOOZE") snoozeAlarm() // Added
+                    } // Added
+                } // Added
+            } // Added
+        } // Added
+
         val newId = intent.getIntExtra("ALARM_ID", -1)
         val newType = intent.getStringExtra("ALARM_TYPE") ?: if (newId > 1000) "TIMER" else "ALARM"
 
@@ -219,7 +280,7 @@ class RingActivity : ComponentActivity() {
 }
 
 @Composable
-fun TimerRingingScreen(startTime: Long, timerId: Int, onStop: () -> Unit, onAdd: (Int) -> Unit, onBack: () -> Unit) {
+fun TimerRingingScreen(startTime: Long, timerId: Int, onStop: () -> Unit, onAdd: (Int) -> Unit, onBack: () -> Unit, isInterrupted: Boolean = false) {
     val timerItem = AlarmRepository.activeTimers.find { it.id == timerId }
     val trueEndTime = timerItem?.endTime ?: startTime
     val context = LocalContext.current

@@ -91,22 +91,23 @@ object NotificationRenderer {
         val layout = if (type == "TIMER") R.layout.notification_timer_done else R.layout.notification_call_style
         val color = if (type == "TIMER") AlarmRepository.TIMER_DONE_COLOR else AlarmRepository.NOTIF_COLOR
 
+        val alarmForHurdle = if (type == "ALARM") AlarmRepository.getAlarm(id) else null
+        val hurdlesActive = alarmForHurdle?.hurdleEnabled == true && alarmForHurdle.selectedHurdles.isNotEmpty()
+
         // Intents
         val fullScreenIntent = Intent(context, RingActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                     Intent.FLAG_ACTIVITY_SINGLE_TOP or
                     Intent.FLAG_ACTIVITY_CLEAR_TOP or
                     Intent.FLAG_ACTIVITY_NO_USER_ACTION
-            putExtra("ALARM_TYPE", type)
             putExtra("ALARM_ID", id)
+            putExtra("ALARM_TYPE", type)
             putExtra("ALARM_LABEL", label)
             
             val t = if (type == "TIMER") AlarmRepository.getTimer(id) else null
             if (t != null) {
                 putExtra("START_TIME", t.endTime)
-            } else if (type == "TIMER") {
-                putExtra("START_TIME", triggerTime)
-            } else if (type == "ALARM") {
+            } else {
                 putExtra("START_TIME", triggerTime)
             }
             
@@ -118,14 +119,27 @@ object NotificationRenderer {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val stopIntent = Intent(context, RingtoneService::class.java).apply {
-            action = "STOP_RINGING"
-            putExtra("TARGET_ID", id)
-            putExtra("ALARM_ID", id)
-            putExtra("ALARM_TYPE", type)
+        val stopIntent = if (hurdlesActive) {
+            Intent(context, RingActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                putExtra("ALARM_ID", id)
+                putExtra("ALARM_TYPE", type)
+                putExtra("PENDING_ACTION", "STOP")
+            }
+        } else {
+            Intent(context, RingtoneService::class.java).apply {
+                action = "STOP_RINGING"
+                putExtra("TARGET_ID", id)
+                putExtra("ALARM_ID", id)
+                putExtra("ALARM_TYPE", type)
+            }
         }
-        val stopPending = PendingIntent.getService(context, id, stopIntent, PendingIntent.FLAG_IMMUTABLE)
-
+        val stopPending = if (hurdlesActive) {
+            PendingIntent.getActivity(context, id + 10000, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        } else {
+            PendingIntent.getService(context, id, stopIntent, PendingIntent.FLAG_IMMUTABLE)
+        }
+        
         // Custom View
         val customView = RemoteViews(context.packageName, layout)
         customView.setOnClickPendingIntent(R.id.btn_stop, stopPending)
@@ -141,15 +155,25 @@ object NotificationRenderer {
         }
 
         if (type == "ALARM") {
-            val snoozeIntent = Intent(context, RingtoneService::class.java).apply {
-                action = "SNOOZE_1"
-                putExtra("ALARM_ID", id)
-                putExtra("TARGET_ID", id)
+            val snoozeIntent = if (hurdlesActive) {
+                Intent(context, RingActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    putExtra("ALARM_ID", id)
+                    putExtra("ALARM_TYPE", type)
+                    putExtra("PENDING_ACTION", "SNOOZE")
+                }
+            } else {
+                Intent(context, RingtoneService::class.java).apply {
+                    action = "SNOOZE_1"
+                    putExtra("ALARM_ID", id)
+                    putExtra("TARGET_ID", id)
+                }
             }
-            val snoozePending = PendingIntent.getService(
-                context, id * 20 + 10000, snoozeIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
+            val snoozePending = if (hurdlesActive) {
+                PendingIntent.getActivity(context, id + 20000, snoozeIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+            } else {
+                PendingIntent.getService(context, id * 20 + 20000, snoozeIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+            }
             customView.setViewVisibility(R.id.btn_snooze, android.view.View.VISIBLE)
             customView.setOnClickPendingIntent(R.id.btn_snooze, snoozePending)
         }

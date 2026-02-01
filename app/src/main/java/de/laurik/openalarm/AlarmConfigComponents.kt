@@ -28,7 +28,10 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 
 @Composable
 fun AlarmConfigSection(
@@ -70,6 +73,10 @@ fun AlarmConfigSection(
     onBackgroundTypeChange: (String) -> Unit,
     backgroundValue: String,
     onBackgroundValueChange: (String) -> Unit,
+    hurdleEnabled: Boolean,
+    onHurdleEnabledChange: (Boolean) -> Unit,
+    selectedHurdles: List<HurdleType>,
+    onSelectedHurdlesChange: (List<HurdleType>) -> Unit,
 
     showRingingMode: Boolean = true,
     showDefaultRingingMode: Boolean = false,
@@ -78,6 +85,7 @@ fun AlarmConfigSection(
     globalSnooze: Int = 10,
     globalAutoStop: Int = 10
 ) {
+    var testingHurdle by remember { mutableStateOf<HurdleType?>(null) }
     val context = LocalContext.current
     val ringtoneTitle = remember(ringtoneUri) { RingtoneUtils.getRingtoneTitle(context, ringtoneUri) }
     val ringtoneLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { res ->
@@ -356,6 +364,82 @@ fun AlarmConfigSection(
             supportingContent = { Text(if (backgroundType == "COLOR") stringResource(R.string.setting_text_solid_color) else stringResource(R.string.setting_text_gradient)) },
             modifier = Modifier.clickable { onBackgroundTypeChange(backgroundType) }
         )
+
+        HorizontalDivider()
+
+        // 6. HURDLES
+        Text(
+            stringResource(R.string.section_hurdles),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(vertical = 12.dp)
+        )
+
+        ListItem(
+            headlineContent = { Text(stringResource(R.string.setting_hurdle_enabled)) },
+            supportingContent = { Text(stringResource(R.string.setting_hurdle_enabled_desc)) },
+            trailingContent = { Switch(checked = hurdleEnabled, onCheckedChange = onHurdleEnabledChange) }
+        )
+
+        AnimatedVisibility(visible = hurdleEnabled) {
+            Column(Modifier.padding(horizontal = 16.dp)) {
+                Text(
+                    stringResource(R.string.label_select_hurdles),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                
+                HurdleType.entries.forEach { type ->
+                    val labelId = when(type) {
+                        HurdleType.DAY_OF_WEEK -> R.string.hurdle_day_of_week
+                        HurdleType.MATH_EASY -> R.string.hurdle_math_easy
+                        HurdleType.MATH_MEDIUM -> R.string.hurdle_math_medium
+                        HurdleType.MATH_DIFFICULT -> R.string.hurdle_math_difficult
+                        HurdleType.GAME -> R.string.hurdle_game
+                    }
+                    
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(
+                            checked = selectedHurdles.contains(type),
+                            onCheckedChange = { checked ->
+                                val newList = if (checked) {
+                                    selectedHurdles + type
+                                } else {
+                                    selectedHurdles.filter { it != type }
+                                }
+                                onSelectedHurdlesChange(newList)
+                            }
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Text(stringResource(labelId), modifier = Modifier.weight(1f))
+                        IconButton(onClick = { testingHurdle = type }) {
+                            Icon(Icons.Default.PlayArrow, contentDescription = "Test")
+                        }
+                    }
+                }
+            }
+        }
+
+        if (testingHurdle != null) {
+            Dialog(
+                onDismissRequest = { testingHurdle = null },
+                properties = DialogProperties(usePlatformDefaultWidth = false)
+            ) {
+                Box(Modifier.fillMaxSize()) {
+                    HurdleSolvingScreen(
+                        hurdleType = testingHurdle!!,
+                        onSolved = { testingHurdle = null },
+                        onCancel = { testingHurdle = null }
+                    )
+                }
+            }
+        }
     }
 }
 

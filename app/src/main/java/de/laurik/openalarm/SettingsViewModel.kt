@@ -128,6 +128,14 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
     fun setDefDirectSnooze(e: Boolean) = repository.setDefDirectSnooze(e)
 
+    val defHurdleEnabled = repository.defHurdleEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    fun setDefHurdleEnabled(e: Boolean) = repository.setDefHurdleEnabled(e)
+
+    val defSelectedHurdles = repository.defSelectedHurdles
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    fun setDefSelectedHurdles(h: List<HurdleType>) = repository.setDefSelectedHurdles(h)
+
     val notifyBeforeEnabled = repository.notifyBeforeEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
     fun setNotifyBeforeEnabled(e: Boolean) {
@@ -153,7 +161,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             isSingleUse = defIsSingleUse.value,
             isSelfDestroying = defIsSelfDestroying.value, daysOfWeek = defDaysOfWeek.value,
             isSnoozeEnabled = defIsSnoozeEnabled.value, directSnooze = defDirectSnooze.value,
-            maxSnoozes = defMaxSnoozes.value, snoozePresets = null, ringingScreenMode = defaultRingingMode.value
+            maxSnoozes = defMaxSnoozes.value, snoozePresets = null, ringingScreenMode = defaultRingingMode.value,
+            hurdleEnabled = defHurdleEnabled.value, selectedHurdles = defSelectedHurdles.value
         )
     }
 
