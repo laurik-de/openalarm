@@ -52,7 +52,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text=""
-            android:textSize="10sp"
+            android:textSize="11sp"
             android:textColor="?android:attr/textColorPrimary" />
     </LinearLayout>
 
@@ -74,7 +74,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text=""
-            android:textSize="10sp"
+            android:textSize="11sp"
             android:textColor="?android:attr/textColorPrimary" />
     </LinearLayout>
 

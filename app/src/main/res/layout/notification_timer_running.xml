@@ -21,7 +21,7 @@
             android:layout_height="wrap_content"
             android:text="@string/notif_time_remaining"
             android:textSize="12sp"
-            android:textColor="#FFFFFF" />
+            android:textColor="?android:attr/textColorPrimary" />
 
         <!-- BIG TEXT for Countdown -->
         <Chronometer
@@ -30,7 +30,7 @@
             android:layout_height="wrap_content"
             android:textSize="28sp"
             android:textStyle="bold"
-            android:textColor="#FFFFFF" />
+            android:textColor="?android:attr/textColorPrimary" />
     </LinearLayout>
 
     <!-- Extension Buttons -->
@@ -46,14 +46,14 @@
             android:layout_width="20dp"
             android:layout_height="20dp"
             android:src="@drawable/ic_alarm"
-            android:tint="#FFFFFF" />
+            android:tint="?android:attr/textColorPrimary" />
         <TextView
             android:id="@+id/txt_add_1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text=""
-            android:textSize="10sp"
-            android:textColor="#FFFFFF" />
+            android:textSize="11sp"
+            android:textColor="?android:attr/textColorPrimary" />
     </LinearLayout>
 
     <LinearLayout
@@ -68,14 +68,14 @@
             android:layout_width="20dp"
             android:layout_height="20dp"
             android:src="@drawable/ic_alarm"
-            android:tint="#FFFFFF" />
+            android:tint="?android:attr/textColorPrimary" />
         <TextView
             android:id="@+id/txt_add_2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text=""
-            android:textSize="10sp"
-            android:textColor="#FFFFFF" />
+            android:textSize="11sp"
+            android:textColor="?android:attr/textColorPrimary" />
     </LinearLayout>
 
     <!-- Stop Button -->
@@ -92,14 +92,14 @@
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:src="@drawable/ic_outline_cancel"
-            android:tint="#FFFFFF" />
+            android:tint="?android:attr/textColorPrimary" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/action_cancel"
             android:textSize="12sp"
-            android:textColor="#FFFFFF" />
+            android:textColor="?android:attr/textColorPrimary" />
     </LinearLayout>
 
 </LinearLayout>
