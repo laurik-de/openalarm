@@ -15,12 +15,19 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import de.laurik.openalarm.ui.theme.bounce
+import de.laurik.openalarm.ui.theme.bounceClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import de.laurik.openalarm.ui.theme.effectsSpring
+import de.laurik.openalarm.ui.theme.spatialSpring
+import de.laurik.openalarm.ui.theme.bounceClickable
+import de.laurik.openalarm.ui.theme.OpenAlarmTheme
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.ColorUtils
@@ -81,8 +88,12 @@ fun GroupCard(
 
     val contentColor = MaterialTheme.colorScheme.onSurface
 
-    // Arrow rotation
-    val rotation by animateFloatAsState(targetValue = if (group.isExpanded) 180f else 0f, label = "arrow")
+    // Arrow rotation using SpatialSpring for natural physics
+    val rotation by animateFloatAsState(
+        targetValue = if (group.isExpanded) 180f else 0f, 
+        animationSpec = spatialSpring(),
+        label = "arrow"
+    )
 
     val emptyListText = stringResource(R.string.alarmlist_empty)
     val nextTimeTemplate = stringResource(R.string.next_time_group)
@@ -127,100 +138,114 @@ fun GroupCard(
         GroupStatus(summary, nTime, nextSkipped, anySkipped)
     }
 
+    val outlineColor = if (isDefaultColor) {
+        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+    } else {
+        baseColor.copy(alpha = if (isSystemDark) 1f else 0.4f)
+    }
+
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp)
-            .animateContentSize()
-            .then(
-                if (useOutline) Modifier.border(
-                    width = 2.dp,
-                    color = baseColor,
-                    shape = RoundedCornerShape(16.dp)
-                ) else Modifier
+            .padding(vertical = 10.dp)
+            .animateContentSize(animationSpec = effectsSpring<androidx.compose.ui.unit.IntSize>())
+            .border(
+                width = 1.dp,
+                color = outlineColor,
+                shape = MaterialTheme.shapes.large
             ),
-        shape = RoundedCornerShape(16.dp),
+        shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = cardColor),
-        elevation = CardDefaults.cardElevation(2.dp)
+        elevation = CardDefaults.cardElevation(3.dp)
     ) {
         Column {
             // HEADER
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .combinedClickable(
-                        onClick = { group.isExpanded = !group.isExpanded },
-                        onLongClick = { onEdit() }
-                    )
+                    .bounceClickable(onClick = { group.isExpanded = !group.isExpanded })
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Group Name & Summary
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(group.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = contentColor)
+                    Text(group.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = contentColor)
                     if (!group.isExpanded) {
-                        Text(status.summary, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis, color = contentColor.copy(alpha = 0.7f))
+                        Text(status.summary, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis, color = contentColor.copy(alpha = 0.7f))
                     }
                 }
 
 
 
-                // Skip Icon
-                IconButton(onClick = { showMenu = true }) {
-                    Icon(
-                        imageVector = Icons.Default.AlarmOff,
-                        contentDescription = stringResource(R.string.menu_skip_next), // Reuse existing string for content description
-                        tint = when {
-                            status.isNextSkipped -> MaterialTheme.colorScheme.error
-                            status.anySkippedOrAdjusted -> MaterialTheme.colorScheme.primary
-                            else -> contentColor
-                        }
-                    )
-                    
-                    DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.menu_skip_next)) },
-                            onClick = { showMenu = false; onSkipNextAll() }
+                // Action Group
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    // Skip Icon with bouncy effect
+                    Box(modifier = Modifier.bounceClickable { showMenu = true }) {
+                        Icon(
+                            imageVector = Icons.Default.AlarmOff,
+                            contentDescription = stringResource(R.string.menu_skip_next),
+                            tint = when {
+                                status.isNextSkipped -> MaterialTheme.colorScheme.error
+                                status.anySkippedOrAdjusted -> MaterialTheme.colorScheme.primary
+                                else -> contentColor
+                            },
+                            modifier = Modifier.padding(8.dp)
                         )
-                        if (status.anySkippedOrAdjusted) {
+                        
+                        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                             DropdownMenuItem(
-                                text = { Text(stringResource(R.string.menu_clear_skip)) },
-                                onClick = { showMenu = false; onClearSkipAll() }
+                                text = { Text(stringResource(R.string.menu_skip_next)) },
+                                onClick = { showMenu = false; onSkipNextAll() }
+                            )
+                            if (status.anySkippedOrAdjusted) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.menu_clear_skip)) },
+                                    onClick = { showMenu = false; onClearSkipAll() }
+                                )
+                            }
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.menu_skip_until)) },
+                                onClick = { showMenu = false; onSkipUntilAll() }
                             )
                         }
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.menu_skip_until)) },
-                            onClick = { showMenu = false; onSkipUntilAll() }
+                    }
+
+                    // Settings Icon with bouncy effect
+                    Box(modifier = Modifier.bounceClickable { onEdit() }) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = stringResource(R.string.edit_group),
+                            tint = contentColor,
+                            modifier = Modifier.padding(8.dp)
+                        )
+                    }
+
+                    // Switch with bouncy effect
+                    val switchIS = remember { MutableInteractionSource() }
+                    Box(modifier = Modifier.bounce(switchIS)) {
+                        Switch(
+                            checked = anyEnabled,
+                            onCheckedChange = onToggleGroup,
+                            interactionSource = switchIS,
+                            modifier = Modifier.scale(0.85f)
+                        )
+                    }
+
+                    // Expander Arrow (Right-aligned, bouncy)
+                    Box(
+                        modifier = Modifier
+                            .bounceClickable { group.isExpanded = !group.isExpanded }
+                            .padding(8.dp)
+                            .rotate(rotation)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.KeyboardArrowDown,
+                            contentDescription = stringResource(R.string.desc_expand),
+                            tint = contentColor.copy(alpha = 0.7f),
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 }
-
-                // Switch
-                Switch(
-                    checked = anyEnabled,
-                    onCheckedChange = onToggleGroup,
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = contentColor,
-                        checkedTrackColor = contentColor.copy(alpha=0.4f),
-                        uncheckedThumbColor = Color.Gray,
-                        uncheckedTrackColor = Color.LightGray.copy(alpha=0.4f)
-                    ),
-                    modifier = Modifier.scale(0.8f)
-                )
-
-
-                // Settings - directly opens edit dialog
-                IconButton(onClick = onEdit) {
-                    Icon(Icons.Default.Settings, stringResource(R.string.edit_group), tint = contentColor)
-                }
-
-                // Expand Arrow
-                Icon(
-                    imageVector = Icons.Default.KeyboardArrowDown,
-                    contentDescription = stringResource(R.string.desc_expand),
-                    tint = contentColor,
-                    modifier = Modifier.rotate(rotation)
-                )
             }
 
             // Adjust Control Row (Visible only when expanded)

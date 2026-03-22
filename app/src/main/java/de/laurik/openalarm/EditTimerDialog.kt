@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import de.laurik.openalarm.ui.theme.bounce
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -54,12 +55,15 @@ fun EditTimerDialog(timerPresets: List<Int> = listOf(10, 15, 30), onDismiss: () 
                         if (numpadContent == null) {
                             Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
                                 timerPresets.forEach { m ->
+                                    val presetIS = remember { MutableInteractionSource() }
                                     OutlinedButton(
                                         onClick = {
                                             snapNext = false // Enable Animation
                                             hour = 0; minute = m; second = 0
                                             updateTrigger++ // FIRE COMMAND
                                         },
+                                        modifier = Modifier.bounce(presetIS),
+                                        interactionSource = presetIS,
                                         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
                                     ) { Text(stringResource(R.string.action_add_minutes, m), fontSize = 16.sp, color = MaterialTheme.colorScheme.primary) }
                                 }
@@ -69,9 +73,23 @@ fun EditTimerDialog(timerPresets: List<Int> = listOf(10, 15, 30), onDismiss: () 
 
                         if (numpadContent != null) numpadContent()
                         else {
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
-                                Button(onClick = { onConfirm((hour * 3600) + (minute * 60) + second) }, modifier = Modifier.fillMaxWidth(0.5f)) { Text(stringResource(R.string.action_start), fontWeight = FontWeight.Bold) }
+                            Row(Modifier.fillMaxWidth().padding(top = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                val cancelIS = remember { MutableInteractionSource() }
+                                TextButton(
+                                    onClick = onDismiss,
+                                    modifier = Modifier.weight(1f).bounce(cancelIS),
+                                    interactionSource = cancelIS
+                                ) { Text(stringResource(R.string.action_cancel)) }
+                                
+                                val confirmIS = remember { MutableInteractionSource() }
+                                Button(
+                                    onClick = { onConfirm((hour * 3600) + (minute * 60) + second) },
+                                    modifier = Modifier.weight(1.5f).bounce(confirmIS).height(56.dp),
+                                    interactionSource = confirmIS,
+                                    shape = MaterialTheme.shapes.medium
+                                ) { 
+                                    Text(stringResource(R.string.action_start), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium) 
+                                }
                             }
                         }
                     }

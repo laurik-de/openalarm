@@ -1,27 +1,104 @@
 package de.laurik.openalarm.ui.theme
 
 import android.os.Build
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.InteractionSource
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
-import androidx.compose.runtime.Composable
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.IntSize
 import de.laurik.openalarm.AppThemeMode
 
+// Material 3 Expressive Motion Specs (Manual Implementation)
+fun <T> spatialSpring() = spring<T>(
+    dampingRatio = 0.8f,
+    stiffness = 380f
+)
+
+fun <T> effectsSpring() = spring<T>(
+    dampingRatio = 1f,
+    stiffness = 200f
+)
+
+/**
+ * A bouncy scale modifier that monitors an InteractionSource.
+ */
+@Composable
+fun Modifier.bounce(interactionSource: InteractionSource): Modifier {
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.92f else 1f, // Slightly more pronounced bounce
+        animationSpec = spatialSpring(),
+        label = "bounce_scale"
+    )
+    return this.graphicsLayer {
+        scaleX = scale
+        scaleY = scale
+    }
+}
+
+/**
+ * A bouncy clickable modifier that scales the content down slightly when pressed.
+ */
+@Composable
+fun Modifier.bounceClickable(
+    interactionSource: MutableInteractionSource? = null,
+    enabled: Boolean = true,
+    onClick: () -> Unit
+): Modifier {
+    val actualIS = interactionSource ?: remember { MutableInteractionSource() }
+    return this.bounce(actualIS)
+        .clickable(
+            interactionSource = actualIS,
+            indication = LocalIndication.current,
+            enabled = enabled,
+            onClick = onClick
+        )
+}
+
+/**
+ * A bouncy combined clickable modifier that supports both click and long click.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun Modifier.bounceCombinedClickable(
+    interactionSource: MutableInteractionSource? = null,
+    enabled: Boolean = true,
+    onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null
+): Modifier {
+    val actualIS = interactionSource ?: remember { MutableInteractionSource() }
+    return this.bounce(actualIS)
+        .combinedClickable(
+            interactionSource = actualIS,
+            indication = LocalIndication.current,
+            enabled = enabled,
+            onClick = onClick,
+            onLongClick = onLongClick
+        )
+}
+
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = PrimaryDark,
+    secondary = SecondaryDark,
+    tertiary = TertiaryDark
 )
 
 private val BlackColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80,
+    primary = PrimaryDark,
+    secondary = SecondaryDark,
+    tertiary = TertiaryDark,
     background = Color.Black,
     surface = Color.Black,
     onBackground = Color.White,
@@ -29,26 +106,15 @@ private val BlackColorScheme = darkColorScheme(
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    primary = PrimaryLight,
+    secondary = SecondaryLight,
+    tertiary = TertiaryLight
 )
 
 @Composable
 fun OpenAlarmTheme(
     themeMode: AppThemeMode = AppThemeMode.SYSTEM,
     isPureBlack: Boolean = false,
-    // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
@@ -71,6 +137,7 @@ fun OpenAlarmTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
+        shapes = ExpressiveShapes,
         content = content
     )
 }

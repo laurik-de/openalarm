@@ -15,6 +15,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import de.laurik.openalarm.ui.theme.bounce
+import de.laurik.openalarm.ui.theme.bounceClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 
 @Composable
 fun EditGroupDialog(
@@ -80,7 +85,7 @@ fun EditGroupDialog(
                                     if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
                                     CircleShape
                                 )
-                                .clickable { selectedColor = colorInt },
+                                .bounceClickable { selectedColor = colorInt },
                             contentAlignment = Alignment.Center
                         ) {
                              if (isSelected) {
@@ -94,19 +99,35 @@ fun EditGroupDialog(
                 
                 // Delete button
                 if (onDelete != null) {
+                    val deleteIS = remember { MutableInteractionSource() }
                     OutlinedButton(
                         onClick = { showDeleteConfirm = true },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().bounce(deleteIS),
+                        interactionSource = deleteIS,
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
                     ) {
-                        Text("Delete Group")
+                        Text(stringResource(R.string.desc_delete))
                     }
                     Spacer(Modifier.height(8.dp))
                 }
                 
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    TextButton(onClick = onDismiss) { Text("Cancel") }
-                    Button(onClick = { onSave(name, selectedColor) }) { Text("Save") }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    val cancelIS = remember { MutableInteractionSource() }
+                    TextButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f).bounce(cancelIS),
+                        interactionSource = cancelIS
+                    ) { Text(stringResource(R.string.action_cancel)) }
+
+                    val saveIS = remember { MutableInteractionSource() }
+                    Button(
+                        onClick = { onSave(name, selectedColor) },
+                        modifier = Modifier.weight(1.5f).bounce(saveIS).height(56.dp),
+                        interactionSource = saveIS,
+                        shape = MaterialTheme.shapes.medium
+                    ) { 
+                        Text(stringResource(R.string.action_save), fontWeight = FontWeight.Bold) 
+                    }
                 }
             }
         }

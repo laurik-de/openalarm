@@ -53,6 +53,9 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import kotlin.collections.associate
+import de.laurik.openalarm.ui.theme.effectsSpring
+import de.laurik.openalarm.ui.theme.bounce
+import androidx.compose.foundation.interaction.MutableInteractionSource
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -312,12 +315,16 @@ fun Dashboard(viewModel: DashboardViewModel = viewModel(), settingsViewModel: Se
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 16.dp)
             ) {
-                // Left: Settings
+                // Left: Settings (Bouncy FAB)
+                val settingsIS = remember { MutableInteractionSource() }
                 FloatingActionButton(
                     onClick = onSettingsClick,
-                    modifier = Modifier.align(Alignment.BottomStart)
+                    interactionSource = settingsIS,
+                    shape = MaterialTheme.shapes.large,
+                    modifier = Modifier.align(Alignment.BottomStart).bounce(settingsIS)
                 ) {
                     Icon(androidx.compose.material.icons.Icons.Default.Settings, contentDescription = stringResource(R.string.title_settings))
                 }
@@ -329,24 +336,29 @@ fun Dashboard(viewModel: DashboardViewModel = viewModel(), settingsViewModel: Se
                 ) {
                     AnimatedVisibility(
                         visible = isFabExpanded,
-                        enter = fadeIn() + expandVertically(),
-                        exit = fadeOut() + shrinkVertically()
+                        enter = fadeIn(animationSpec = effectsSpring()) + 
+                               expandVertically(animationSpec = effectsSpring()),
+                        exit = fadeOut(animationSpec = effectsSpring()) + 
+                              shrinkVertically(animationSpec = effectsSpring())
                     ) {
-                        Column(horizontalAlignment = Alignment.End) {
+                        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                            val timerIS = remember { MutableInteractionSource() }
                             ExtendedFloatingActionButton(
                                 onClick = {
                                     showTimerDialog = true
                                     isFabExpanded = false
                                 },
-                                modifier = Modifier.padding(bottom = 16.dp),
-                                text = { Text(stringResource(R.string.action_add_timer)) },
-                                icon = { Icon(androidx.compose.material.icons.Icons.Default.Timer, null) }
+                                interactionSource = timerIS,
+                                shape = MaterialTheme.shapes.large,
+                                text = { Text(stringResource(R.string.action_add_timer), style = MaterialTheme.typography.labelLarge) },
+                                icon = { Icon(androidx.compose.material.icons.Icons.Default.Timer, null) },
+                                modifier = Modifier.width(160.dp).bounce(timerIS)
                             )
 
+                            val alarmIS = remember { MutableInteractionSource() }
                             ExtendedFloatingActionButton(
                                 onClick = {
                                     val now = Calendar.getInstance()
-                                    // Use defaults from settings
                                     editingAlarm = settingsViewModel.createDefaultAlarm(
                                         now.get(Calendar.HOUR_OF_DAY),
                                         now.get(Calendar.MINUTE)
@@ -354,17 +366,28 @@ fun Dashboard(viewModel: DashboardViewModel = viewModel(), settingsViewModel: Se
                                     isCreatingNew = true
                                     isFabExpanded = false
                                 },
-                                modifier = Modifier.padding(bottom = 16.dp),
-                                text = { Text(stringResource(R.string.action_add_alarm)) },
-                                icon = { Icon(androidx.compose.material.icons.Icons.Default.Alarm, null) }
+                                interactionSource = alarmIS,
+                                shape = MaterialTheme.shapes.large,
+                                text = { Text(stringResource(R.string.action_add_alarm), style = MaterialTheme.typography.labelLarge) },
+                                icon = { Icon(androidx.compose.material.icons.Icons.Default.Alarm, null) },
+                                modifier = Modifier.width(160.dp).bounce(alarmIS)
                             )
+                            Spacer(Modifier.height(8.dp))
                         }
                     }
 
-                    FloatingActionButton(onClick = { isFabExpanded = !isFabExpanded }) {
+                    val mainFabIS = remember { MutableInteractionSource() }
+                    LargeFloatingActionButton(
+                        onClick = { isFabExpanded = !isFabExpanded },
+                        interactionSource = mainFabIS,
+                        shape = MaterialTheme.shapes.extraLarge,
+                        containerColor = if (isFabExpanded) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.primaryContainer,
+                        modifier = Modifier.bounce(mainFabIS)
+                    ) {
                         Icon(
                             if (isFabExpanded) androidx.compose.material.icons.Icons.Default.Close else androidx.compose.material.icons.Icons.Default.Add,
-                            contentDescription = stringResource(if (isFabExpanded) R.string.desc_close else R.string.desc_expand)
+                            contentDescription = stringResource(if (isFabExpanded) R.string.desc_close else R.string.desc_expand),
+                            modifier = Modifier.size(36.dp)
                         )
                     }
                 }

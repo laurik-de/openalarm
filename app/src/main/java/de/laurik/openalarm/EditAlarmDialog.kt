@@ -12,12 +12,16 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import de.laurik.openalarm.ui.theme.bounce
+import de.laurik.openalarm.ui.theme.bounceClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -94,16 +98,73 @@ fun EditAlarmDialog(
                                 R.string.title_edit_alarm
                             )
                         )
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = onDismiss) {
-                            Icon(
-                                Icons.Default.Close,
-                                stringResource(R.string.desc_close)
-                            )
-                        }
                     }
                 )
+            },
+            bottomBar = {
+                Surface(tonalElevation = 2.dp) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                            .navigationBarsPadding(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        val cancelIS = remember { MutableInteractionSource() }
+                        TextButton(
+                            onClick = onDismiss,
+                            modifier = Modifier.weight(1f).bounce(cancelIS),
+                            interactionSource = cancelIS
+                        ) { Text(stringResource(R.string.action_cancel)) }
+
+                        val saveIS = remember { MutableInteractionSource() }
+                        Button(
+                            onClick = {
+                                val updated = alarm.copy(
+                                    hour = hour,
+                                    minute = minute,
+                                    label = label,
+                                    daysOfWeek = daysOfWeek,
+                                    vibrationEnabled = vibration,
+                                    ringtoneUri = currentUriStr,
+                                    customVolume = customVolume,
+                                    fadeInSeconds = fadeInSeconds,
+                                    ttsMode = ttsMode,
+                                    ttsText = ttsText.ifBlank { null },
+                                    groupId = selectedGroupId,
+                                    snoozeDuration = snoozeOverride,
+                                    autoStopDuration = autoStopOverride,
+                                    isSnoozeEnabled = isSnoozeEnabled,
+                                    directSnooze = directSnooze,
+                                    maxSnoozes = maxSnoozes,
+                                    snoozePresets = snoozePresets,
+                                    isSingleUse = isSingleUse,
+                                    isSelfDestroying = isSelfDestroying,
+                                    ringingScreenMode = ringingScreenMode,
+                                    backgroundType = backgroundType,
+                                    backgroundValue = backgroundValue
+                                )
+                                if (isNewGroupMode && newGroupName.isNotBlank()) {
+                                    onSave(
+                                        updated,
+                                        newGroupName,
+                                        selectedColor
+                                    )
+                                } else {
+                                    onSave(updated, null, null)
+                                }
+                            },
+                            modifier = Modifier.weight(1.5f).bounce(saveIS).height(56.dp),
+                            interactionSource = saveIS,
+                            shape = MaterialTheme.shapes.medium
+                        ) {
+                            Icon(Icons.Default.Check, null)
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.action_save), fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
             }
         ) { padding ->
             Box(modifier = Modifier.padding(padding).fillMaxSize().imePadding()) {
@@ -186,11 +247,9 @@ fun EditAlarmDialog(
                                                 label = { Text(stringResource(R.string.hint_group_name)) },
                                                 modifier = Modifier.weight(1f)
                                             )
-                                            IconButton(onClick = { isNewGroupMode = false }) {
-                                                Icon(
-                                                    Icons.Default.Close,
-                                                    stringResource(R.string.action_cancel)
-                                                )
+                                            val groupCancelIS = remember { MutableInteractionSource() }
+                                            IconButton(onClick = { isNewGroupMode = false }, interactionSource = groupCancelIS, modifier = Modifier.bounce(groupCancelIS)) {
+                                                Icon(Icons.Default.Close, contentDescription = null)
                                             }
                                         }
                                         // Color Picker
@@ -203,15 +262,15 @@ fun EditAlarmDialog(
                                                 val isSelected = selectedColor == colorInt
                                                 Box(
                                                     modifier = Modifier
-                                                        .size(48.dp)
+                                                        .size(36.dp)
                                                         .clip(CircleShape)
                                                         .background(Color(colorInt))
                                                         .border(
-                                                            if (isSelected) 3.dp else 1.dp,
-                                                            if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-                                                            CircleShape
+                                                            width = if (selectedColor == colorInt) 3.dp else 1.dp,
+                                                            color = if (selectedColor == colorInt) MaterialTheme.colorScheme.primary else Color.LightGray.copy(alpha = 0.5f),
+                                                            shape = CircleShape
                                                         )
-                                                        .clickable { selectedColor = colorInt },
+                                                        .bounceClickable { selectedColor = colorInt },
                                                     contentAlignment = Alignment.Center
                                                 ) {
                                                     if (isSelected) {
@@ -283,67 +342,13 @@ fun EditAlarmDialog(
                             }
                         }
 
-                        // Bottom Actions
+                        // Bottom Actions (Numpad support only)
                         if (numpadContent != null) {
                             Surface(
                                 shadowElevation = 8.dp,
                                 color = MaterialTheme.colorScheme.surfaceContainerHighest
                             ) {
                                 numpadContent()
-                            }
-                        } else {
-                            Surface(
-                                shadowElevation = 8.dp,
-                                color = MaterialTheme.colorScheme.surface
-                            ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().padding(16.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    TextButton(
-                                        onClick = onDismiss,
-                                        modifier = Modifier.height(56.dp).weight(1f)
-                                    ) { Text(stringResource(R.string.action_cancel)) }
-                                    Spacer(Modifier.width(16.dp))
-                                    Button(
-                                        onClick = {
-                                            val updated = alarm.copy(
-                                                hour = hour,
-                                                minute = minute,
-                                                label = label,
-                                                daysOfWeek = daysOfWeek,
-                                                vibrationEnabled = vibration,
-                                                ringtoneUri = currentUriStr,
-                                                customVolume = customVolume,
-                                                fadeInSeconds = fadeInSeconds,
-                                                ttsMode = ttsMode,
-                                                ttsText = ttsText.ifBlank { null },
-                                                groupId = selectedGroupId,
-                                                snoozeDuration = snoozeOverride,
-                                                autoStopDuration = autoStopOverride,
-                                                isSnoozeEnabled = isSnoozeEnabled,
-                                                directSnooze = directSnooze,
-                                                maxSnoozes = maxSnoozes,
-                                                snoozePresets = snoozePresets,
-                                                isSingleUse = isSingleUse,
-                                                isSelfDestroying = isSelfDestroying,
-                                                ringingScreenMode = ringingScreenMode,
-                                                backgroundType = backgroundType,
-                                                backgroundValue = backgroundValue
-                                            )
-                                            if (isNewGroupMode && newGroupName.isNotBlank()) {
-                                                onSave(
-                                                    updated,
-                                                    newGroupName,
-                                                    selectedColor
-                                                )
-                                            } else {
-                                                onSave(updated, null, null)
-                                            }
-                                        },
-                                        modifier = Modifier.height(56.dp).weight(1f)
-                                    ) { Text(stringResource(R.string.action_save)) }
-                                }
                             }
                         }
                     }
@@ -437,14 +442,15 @@ fun OverrideInputDialog(
     var buffer by remember { mutableStateOf(currentVal?.toString() ?: "") }
 
     Dialog(onDismissRequest = onDismiss) {
-        Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surface) {
-            Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(title, style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(16.dp))
+        Surface(shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.surface) {
+            Column(Modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(24.dp))
 
                 if (buffer.isEmpty()) {
                     Text(
                         stringResource(R.string.label_use_global_default, defaultVal),
+                        style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 } else {
@@ -455,14 +461,15 @@ fun OverrideInputDialog(
                     )
                 }
 
-                Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(32.dp))
 
                 OutlinedButton(
                     onClick = { onConfirm(null) },
-                    modifier = Modifier.fillMaxWidth()
-                ) { Text(stringResource(R.string.action_reset)) }
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.large
+                ) { Text(stringResource(R.string.action_reset), style = MaterialTheme.typography.labelLarge) }
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(12.dp))
 
                 IntegratedNumpad(
                     onInput = { if (buffer.length < 3) buffer += it },

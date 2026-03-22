@@ -2,6 +2,7 @@ package de.laurik.openalarm
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import de.laurik.openalarm.ui.theme.bounceClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -64,7 +65,7 @@ fun IntegratedNumpad(
                                     else -> MaterialTheme.colorScheme.surfaceContainerHighest
                                 }
                             )
-                            .clickable {
+                            .bounceClickable {
                                 when(key) {
                                     "DEL" -> onDelete()
                                     else -> onInput(key)

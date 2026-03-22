@@ -12,6 +12,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import de.laurik.openalarm.ui.theme.bounce
+import de.laurik.openalarm.ui.theme.bounceClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -112,12 +115,22 @@ fun AlarmConfigSection(
 
         ListItem(
             headlineContent = { Text(stringResource(R.string.setting_single_use)) },
-            trailingContent = { Switch(checked = isSingleUse, onCheckedChange = onSingleUseChange) }
+            trailingContent = { 
+                val isIS = remember { MutableInteractionSource() }
+                Box(modifier = Modifier.bounce(isIS)) {
+                    Switch(checked = isSingleUse, onCheckedChange = onSingleUseChange, interactionSource = isIS) 
+                }
+            }
         )
         AnimatedVisibility(visible = isSingleUse) {
             ListItem(
                 headlineContent = { Text(stringResource(R.string.setting_self_destroy)) },
-                trailingContent = { Switch(checked = isSelfDestroying, onCheckedChange = onSelfDestroyingChange) }
+                trailingContent = { 
+                    val sdIS = remember { MutableInteractionSource() }
+                    Box(modifier = Modifier.bounce(sdIS)) {
+                        Switch(checked = isSelfDestroying, onCheckedChange = onSelfDestroyingChange, interactionSource = sdIS) 
+                    }
+                }
             )
         }
         HorizontalDivider()
@@ -125,7 +138,12 @@ fun AlarmConfigSection(
         // VIBRATION
         ListItem(
             headlineContent = { Text(stringResource(R.string.label_vibration)) },
-            trailingContent = { Switch(checked = vibration, onCheckedChange = onVibrationChange) }
+            trailingContent = { 
+                val vibIS = remember { MutableInteractionSource() }
+                Box(modifier = Modifier.bounce(vibIS)) {
+                    Switch(checked = vibration, onCheckedChange = onVibrationChange, interactionSource = vibIS) 
+                }
+            }
         )
         HorizontalDivider()
 
@@ -142,7 +160,7 @@ fun AlarmConfigSection(
             headlineContent = { Text(stringResource(R.string.label_sound)) },
             supportingContent = { Text(ringtoneTitle) },
             trailingContent = { Text(">") },
-            modifier = Modifier.clickable {
+            modifier = Modifier.bounceClickable {
                 showSourceSelector = true
             }
         )
@@ -225,7 +243,10 @@ fun AlarmConfigSection(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.label_fade_in), style = MaterialTheme.typography.bodyLarge)
                 Spacer(Modifier.weight(1f))
-                Switch(checked = fadeInSeconds > 0, onCheckedChange = { onFadeInChange(if (it) 30 else 0) })
+                val fiIS = remember { MutableInteractionSource() }
+                Box(modifier = Modifier.bounce(fiIS)) {
+                    Switch(checked = fadeInSeconds > 0, onCheckedChange = { onFadeInChange(if (it) 30 else 0) }, interactionSource = fiIS)
+                }
             }
             AnimatedVisibility(visible = fadeInSeconds > 0) {
                 Column {
@@ -240,12 +261,16 @@ fun AlarmConfigSection(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.label_speak_time), style = MaterialTheme.typography.bodyLarge)
                 Spacer(Modifier.weight(1f))
-                Switch(
-                    checked = ttsMode != TtsMode.NONE,
-                    onCheckedChange = { enabled ->
-                        onTtsModeChange(if (enabled) TtsMode.ONCE else TtsMode.NONE)
-                    }
-                )
+                val ttsToggleIS = remember { MutableInteractionSource() }
+                Box(modifier = Modifier.bounce(ttsToggleIS)) {
+                    Switch(
+                        checked = ttsMode != TtsMode.NONE,
+                        onCheckedChange = { enabled ->
+                            onTtsModeChange(if (enabled) TtsMode.ONCE else TtsMode.NONE)
+                        },
+                        interactionSource = ttsToggleIS
+                    )
+                }
             }
             
             AnimatedVisibility(visible = ttsMode != TtsMode.NONE) {
@@ -257,17 +282,21 @@ fun AlarmConfigSection(
                         modifier = Modifier.padding(bottom = 4.dp)
                     )
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        val onceIS = remember { MutableInteractionSource() }
                         FilterChip(
                             selected = ttsMode == TtsMode.ONCE,
                             onClick = { onTtsModeChange(TtsMode.ONCE) },
                             label = { Text(stringResource(R.string.tts_once)) },
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f).bounce(onceIS),
+                            interactionSource = onceIS
                         )
+                        val everyIS = remember { MutableInteractionSource() }
                         FilterChip(
                             selected = ttsMode == TtsMode.EVERY_MINUTE,
                             onClick = { onTtsModeChange(TtsMode.EVERY_MINUTE) },
                             label = { Text(stringResource(R.string.tts_every_min)) },
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f).bounce(everyIS),
+                            interactionSource = everyIS
                         )
                     }
                     
@@ -292,24 +321,34 @@ fun AlarmConfigSection(
 
         ListItem(
             headlineContent = { Text(stringResource(R.string.setting_allow_snooze)) },
-            trailingContent = { Switch(checked = isSnoozeEnabled, onCheckedChange = onSnoozeEnabledChange) }
+            trailingContent = { 
+                val asIS = remember { MutableInteractionSource() }
+                Box(modifier = Modifier.bounce(asIS)) {
+                    Switch(checked = isSnoozeEnabled, onCheckedChange = onSnoozeEnabledChange, interactionSource = asIS) 
+                }
+            }
         )
         AnimatedVisibility(visible = isSnoozeEnabled) {
             Column {
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.setting_direct_snooze)) },
                     supportingContent = { Text(stringResource(R.string.setting_direct_snooze_subtext)) },
-                    trailingContent = { Switch(checked = directSnooze, onCheckedChange = onDirectSnoozeChange) }
+                    trailingContent = { 
+                        val dsIS = remember { MutableInteractionSource() }
+                        Box(modifier = Modifier.bounce(dsIS)) {
+                            Switch(checked = directSnooze, onCheckedChange = onDirectSnoozeChange, interactionSource = dsIS) 
+                        }
+                    }
                 )
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.setting_snooze_duration)) },
                     supportingContent = { Text(if (snoozeDuration == null) stringResource(R.string.setting_snooze_duration_subtext_default, globalSnooze) else stringResource(R.string.setting_snooze_duration_subtext_custom, snoozeDuration)) },
-                    modifier = Modifier.clickable { onSnoozeDurationChange(snoozeDuration) }
+                    modifier = Modifier.bounceClickable { onSnoozeDurationChange(snoozeDuration) }
                 )
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.setting_max_snoozes)) },
                     supportingContent = { Text(if (maxSnoozes == null) stringResource(R.string.setting_max_snoozes_subtext_infinite) else stringResource(R.string.setting_max_snoozes_subtext_custom, maxSnoozes)) },
-                    modifier = Modifier.clickable { onMaxSnoozesChange(maxSnoozes) }
+                    modifier = Modifier.bounceClickable { onMaxSnoozesChange(maxSnoozes) }
                 )
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.setting_snooze_presets)) },
@@ -318,7 +357,7 @@ fun AlarmConfigSection(
                         val fmtMinutesShort = stringResource(R.string.fmt_minutes_short)
                         Text(if (snoozePresets == null) defaultText else snoozePresets.joinToString(", ") { it.toString() + fmtMinutesShort })
                     },
-                    modifier = Modifier.clickable { onSnoozePresetsChange(snoozePresets) }
+                    modifier = Modifier.bounceClickable { onSnoozePresetsChange(snoozePresets) }
                 )
             }
         }
@@ -326,7 +365,7 @@ fun AlarmConfigSection(
         ListItem(
             headlineContent = { Text(stringResource(R.string.setting_timeout)) },
             supportingContent = { Text(if (autoStopDuration == null) stringResource(R.string.setting_timeout_default, globalAutoStop) else stringResource(R.string.setting_timeout_custom, autoStopDuration)) },
-            modifier = Modifier.clickable { onAutoStopDurationChange(autoStopDuration) }
+            modifier = Modifier.bounceClickable { onAutoStopDurationChange(autoStopDuration) }
         )
 
         HorizontalDivider()
@@ -338,7 +377,7 @@ fun AlarmConfigSection(
             ListItem(
                 headlineContent = { Text(stringResource(R.string.setting_ringing_mode)) },
                 supportingContent = { Text(ringingMode.name) },
-                modifier = Modifier.clickable {
+                modifier = Modifier.bounceClickable {
                     val modes = if (showDefaultRingingMode) {
                         RingingScreenMode.entries.toList()
                     } else {
@@ -354,7 +393,7 @@ fun AlarmConfigSection(
         ListItem(
             headlineContent = { Text(stringResource(R.string.setting_alarm_background)) },
             supportingContent = { Text(if (backgroundType == "COLOR") stringResource(R.string.setting_text_solid_color) else stringResource(R.string.setting_text_gradient)) },
-            modifier = Modifier.clickable { onBackgroundTypeChange(backgroundType) }
+            modifier = Modifier.bounceClickable { onBackgroundTypeChange(backgroundType) }
         )
     }
 }
@@ -385,13 +424,13 @@ fun ColorPickerGrid(
                 
                 Box(
                     modifier = Modifier
-                        .size(44.dp)
-                        .clip(CircleShape)
+                        .size(48.dp)
+                        .clip(MaterialTheme.shapes.medium)
                         .background(color)
                         .border(
                             width = if (isSelected) 3.dp else 1.dp,
                             color = if (isSelected) MaterialTheme.colorScheme.primary else Color.LightGray.copy(alpha = 0.5f),
-                            shape = CircleShape
+                            shape = MaterialTheme.shapes.medium
                         )
                         .clickable { onColorSelected(colorHex) },
                     contentAlignment = Alignment.Center
