@@ -16,6 +16,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -59,6 +62,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.sp
 import de.laurik.openalarm.ui.theme.bounceClickable
 
 class MainActivity : ComponentActivity() {
@@ -79,20 +83,16 @@ class MainActivity : ComponentActivity() {
             val isPureBlack by settingsViewModel.isPureBlack.collectAsState()
             var showSettings by remember { mutableStateOf(false) }
 
-            // Navigation State
-            var currentScreen by remember { 
-                mutableStateOf(pendingNavTarget?.let { if (it == "TIMER") Screen.TIMER else Screen.ALARM } ?: Screen.ALARM) 
-            }
-            
+            // Navigation State (Sync with Pager)
+            val pagerState = rememberPagerState { Screen.entries.size }
+            val scope = rememberCoroutineScope()
+
             // Listen for external navigation requests (like from notifications)
             LaunchedEffect(pendingNavTarget) {
                 pendingNavTarget?.let { target ->
                     android.util.Log.d("OpenAlarm", "Navigating to $target")
-                    if (target == "TIMER") {
-                        currentScreen = Screen.TIMER
-                    } else if (target == "ALARM") {
-                        currentScreen = Screen.ALARM
-                    }
+                    val targetScreen = if (target == "TIMER") Screen.TIMER else Screen.ALARM
+                    pagerState.animateScrollToPage(targetScreen.ordinal)
                     pendingNavTarget = null // Clear after handling
                 }
             }
@@ -118,7 +118,7 @@ class MainActivity : ComponentActivity() {
             }
 
             de.laurik.openalarm.ui.theme.OpenAlarmTheme(themeMode = themeMode, isPureBlack = isPureBlack) {
-                MainContent(settingsViewModel, currentScreen) { currentScreen = it }
+                MainContent(settingsViewModel, pagerState)
                 CheckSystemPermissions()
             }
         }
@@ -275,8 +275,11 @@ fun CheckSystemPermissions() {
 
 enum class Screen { ALARM, TIMER, SETTINGS }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun MainContent(settingsViewModel: SettingsViewModel, currentScreen: Screen, onScreenChange: (Screen) -> Unit) {
+fun MainContent(settingsViewModel: SettingsViewModel, pagerState: PagerState) {
+    val currentScreen = Screen.entries[pagerState.currentPage]
+    val scope = rememberCoroutineScope()
     val dashboardViewModel: DashboardViewModel = viewModel()
     
     val activeTimers = dashboardViewModel.activeTimers
@@ -297,35 +300,55 @@ fun MainContent(settingsViewModel: SettingsViewModel, currentScreen: Screen, onS
                     val activeTimers = dashboardViewModel.activeTimers
                     val currentTime by dashboardViewModel.currentTime.collectAsStateWithLifecycle()
                     
-                    if (activeTimers.isNotEmpty() && currentScreen != Screen.TIMER) {
+                    if (activeTimers.isNotEmpty()) {
                         val timer = activeTimers.first()
-                        val diff = timer.endTime - currentTime
+                        val diff = if (timer.isPaused) timer.remainingMillis else timer.endTime - currentTime
                         val progress = if (timer.totalDuration > 0) 1f - (diff.toFloat() / timer.totalDuration) else 0f
+                        val isPaused = timer.isPaused
+                        
+                        // Always orange, but dimmed when paused as requested
+                        val baseColor = Color(0xFFE65100)
+                        val barOpacity = if (isPaused) 0.6f else 1f
                         
                         Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(48.dp)
-                                .bounceClickable { onScreenChange(Screen.TIMER) },
-                            color = MaterialTheme.colorScheme.surfaceContainer,
+                                .bounceClickable { scope.launch { pagerState.animateScrollToPage(Screen.TIMER.ordinal) } },
+                            color = baseColor.copy(alpha = barOpacity),
                             tonalElevation = 4.dp
                         ) {
                             Box(modifier = Modifier.fillMaxSize()) {
+                                // THE TRACK (Remaining time) - dimmed version of the orange
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(Color.Black.copy(alpha = 0.3f))
+                                )
+                                // THE PROGRESS (Passed time) - solid pop on the dimmed track
                                 Box(
                                     modifier = Modifier
                                         .fillMaxHeight()
                                         .fillMaxWidth(progress.coerceIn(0f, 1f))
-                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
+                                        .background(Color.White.copy(alpha = 0.35f))
                                 )
                                 Row(
                                     modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text(stringResource(R.string.title_timer), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                                    Text(
+                                        stringResource(R.string.title_timer).uppercase(),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Black,
+                                        color = Color.White,
+                                        letterSpacing = 1.2.sp
+                                    )
                                     Text(
                                         if (diff > 0L) AlarmUtils.formatTimerTime(diff) else stringResource(R.string.timer_ringing),
-                                        style = MaterialTheme.typography.bodyMedium
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
                                     )
                                 }
                             }
@@ -337,42 +360,45 @@ fun MainContent(settingsViewModel: SettingsViewModel, currentScreen: Screen, onS
                             icon = { Icon(Icons.Default.Alarm, null) },
                             label = { Text(stringResource(R.string.title_alarm)) },
                             selected = currentScreen == Screen.ALARM,
-                            onClick = { onScreenChange(Screen.ALARM) }
+                            onClick = { scope.launch { pagerState.animateScrollToPage(Screen.ALARM.ordinal) } }
                         )
                         NavigationBarItem(
                             icon = { Icon(Icons.Default.Timer, null) },
                             label = { Text(stringResource(R.string.title_timer)) },
                             selected = currentScreen == Screen.TIMER,
-                            onClick = { onScreenChange(Screen.TIMER) }
+                            onClick = { scope.launch { pagerState.animateScrollToPage(Screen.TIMER.ordinal) } }
                         )
                         NavigationBarItem(
                             icon = { Icon(Icons.Default.Settings, null) },
                             label = { Text(stringResource(R.string.title_settings)) },
                             selected = currentScreen == Screen.SETTINGS,
-                            onClick = { onScreenChange(Screen.SETTINGS) }
+                            onClick = { scope.launch { pagerState.animateScrollToPage(Screen.SETTINGS.ordinal) } }
                         )
                     }
                 }
             },
             floatingActionButton = {
-                if (currentScreen == Screen.ALARM && globalNumpad == null) {
-                    val fabIS = remember { MutableInteractionSource() }
-                    LargeFloatingActionButton(
-                        onClick = { showAlarmDialogForNew = true },
-                        interactionSource = fabIS,
-                        shape = MaterialTheme.shapes.extraLarge,
-                        modifier = Modifier.bounce(fabIS)
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.action_add_alarm), modifier = Modifier.size(36.dp))
-                    }
-                }
+                // FAB moved into AlarmScreen to swipe with it
             }
         ) { paddingValues ->
             Box(modifier = Modifier.padding(paddingValues)) {
-                when (currentScreen) {
-                    Screen.ALARM -> AlarmScreen(dashboardViewModel, settingsViewModel, showAlarmDialogForNew, onAlarmDialogDismiss = { showAlarmDialogForNew = false })
-                    Screen.TIMER -> TimerScreen(dashboardViewModel, settingsViewModel.timerPresets.collectAsState().value, triggerStartTimer, onNumpadChange = { globalNumpad = it })
-                    Screen.SETTINGS -> SettingsScreen(settingsViewModel, onClose = { onScreenChange(Screen.ALARM) })
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxSize(),
+                    beyondViewportPageCount = 1,
+                    userScrollEnabled = globalNumpad == null
+                ) { page ->
+                    when (Screen.entries[page]) {
+                        Screen.ALARM -> AlarmScreen(
+                            viewModel = dashboardViewModel,
+                            settingsViewModel = settingsViewModel,
+                            triggerCreateAlarm = showAlarmDialogForNew,
+                            onAlarmDialogDismiss = { showAlarmDialogForNew = false },
+                            isNumpadVisible = globalNumpad != null
+                        )
+                        Screen.TIMER -> TimerScreen(dashboardViewModel, settingsViewModel.timerPresets.collectAsState().value, triggerStartTimer, onNumpadChange = { globalNumpad = it })
+                        Screen.SETTINGS -> SettingsScreen(settingsViewModel, onClose = { scope.launch { pagerState.animateScrollToPage(Screen.ALARM.ordinal) } })
+                    }
                 }
             }
         }
@@ -404,10 +430,11 @@ fun AlarmScreen(
     viewModel: DashboardViewModel,
     settingsViewModel: SettingsViewModel,
     triggerCreateAlarm: Boolean = false,
-    onAlarmDialogDismiss: () -> Unit = {}
+    onAlarmDialogDismiss: () -> Unit = {},
+    isNumpadVisible: Boolean = false
 ) {
     val context = LocalContext.current
-    
+
     // Collect preset settings
     val quickAdjustPresets by settingsViewModel.quickAdjustPresets.collectAsState()
 
@@ -446,14 +473,14 @@ fun AlarmScreen(
         compareBy<AlarmItem> { !it.isEnabled }
             .thenBy { alarm ->
                 if (alarm.isEnabled) {
-                    val minTime = if (alarm.skippedUntil > System.currentTimeMillis()) 
-                        alarm.skippedUntil 
-                    else 
+                    val minTime = if (alarm.skippedUntil > System.currentTimeMillis())
+                        alarm.skippedUntil
+                    else
                         System.currentTimeMillis()
                     AlarmUtils.getNextOccurrence(
-                        alarm.hour, alarm.minute, alarm.daysOfWeek, 
+                        alarm.hour, alarm.minute, alarm.daysOfWeek,
                         0, // group offset (0 for default group)
-                        alarm.temporaryOverrideTime, 
+                        alarm.temporaryOverrideTime,
                         alarm.snoozeUntil,
                         minTime
                     )
@@ -462,7 +489,7 @@ fun AlarmScreen(
                 }
             }
     ) ?: emptyList()
-    
+
     // Sort custom groups by their earliest alarm's next occurrence
     val customGroups = viewModel.groups
         .filter { it.id != "default" && it.id != defaultGroup?.id }
@@ -472,14 +499,14 @@ fun AlarmScreen(
                 .filter { it.isEnabled }
                 .minOfOrNull { alarm ->
                     val minTime = maxOf(
-                        System.currentTimeMillis(), 
+                        System.currentTimeMillis(),
                         alarm.skippedUntil,
                         group.skippedUntil
                     )
                     AlarmUtils.getNextOccurrence(
-                        alarm.hour, alarm.minute, alarm.daysOfWeek, 
+                        alarm.hour, alarm.minute, alarm.daysOfWeek,
                         group.offsetMinutes,
-                        alarm.temporaryOverrideTime, 
+                        alarm.temporaryOverrideTime,
                         alarm.snoozeUntil,
                         minTime
                     )
@@ -490,16 +517,17 @@ fun AlarmScreen(
     // Actually, I'll move the FAB back into AlarmScreen for now, OR pass a lambda.
     // The request says "only the fab on the bottom right".
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Spacer(modifier = Modifier.height(16.dp))
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Spacer(modifier = Modifier.height(16.dp))
 
-        // --- MAIN LIST ---
-        LazyColumn(modifier = Modifier.weight(1f)) {
+            // --- MAIN LIST ---
+            LazyColumn(modifier = Modifier.weight(1f)) {
 
                 // 1. UNGROUPED ALARMS
                 if (flatAlarms.isNotEmpty()) {
@@ -526,10 +554,20 @@ fun AlarmScreen(
                             onDelete = { viewModel.deleteAlarm(alarm) },
                             onSkipNext = {
                                 val nextRaw = AlarmUtils.getNextOccurrence(
-                                    alarm.hour, alarm.minute, alarm.daysOfWeek, 0, alarm.temporaryOverrideTime, alarm.snoozeUntil
+                                    alarm.hour,
+                                    alarm.minute,
+                                    alarm.daysOfWeek,
+                                    0,
+                                    alarm.temporaryOverrideTime,
+                                    alarm.snoozeUntil
                                 )
                                 val baseNext = AlarmUtils.getNextOccurrence(
-                                    alarm.hour, alarm.minute, alarm.daysOfWeek, 0, null, alarm.snoozeUntil
+                                    alarm.hour,
+                                    alarm.minute,
+                                    alarm.daysOfWeek,
+                                    0,
+                                    null,
+                                    alarm.snoozeUntil
                                 )
                                 val skipTarget = maxOf(nextRaw, baseNext)
                                 val updated = alarm.copy(skippedUntil = skipTarget + 1000)
@@ -537,7 +575,8 @@ fun AlarmScreen(
                             },
                             onSkipUntil = { showDatePickerForAlarm = alarm },
                             onClearSkip = {
-                                val updated = alarm.copy(skippedUntil = 0L, temporaryOverrideTime = null)
+                                val updated =
+                                    alarm.copy(skippedUntil = 0L, temporaryOverrideTime = null)
                                 viewModel.saveAlarm(updated, false)
                             },
                             onAdjustTime = { mins -> viewModel.adjustAlarmTime(alarm, mins) },
@@ -546,7 +585,10 @@ fun AlarmScreen(
                     }
                 } else if (customGroups.isEmpty()) {
                     item {
-                        Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                        Box(
+                            Modifier.fillMaxWidth().padding(32.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Text(stringResource(R.string.no_alarms_create_one), color = Color.Gray)
                         }
                     }
@@ -558,7 +600,8 @@ fun AlarmScreen(
                         modifier = Modifier.animateItem(),
                         group = group,
                         onToggleGroup = { isEnabled ->
-                            group.alarms.toList().forEach { a -> viewModel.toggleAlarm(a, isEnabled) }
+                            group.alarms.toList()
+                                .forEach { a -> viewModel.toggleAlarm(a, isEnabled) }
                         },
                         onAdjust = { groupToAdjust = group },
                         onEdit = { groupToEdit = group },
@@ -573,14 +616,14 @@ fun AlarmScreen(
                                     .thenBy { alarm ->
                                         if (alarm.isEnabled) {
                                             val minTime = maxOf(
-                                                System.currentTimeMillis(), 
+                                                System.currentTimeMillis(),
                                                 alarm.skippedUntil,
                                                 group.skippedUntil
                                             )
                                             AlarmUtils.getNextOccurrence(
-                                                alarm.hour, alarm.minute, alarm.daysOfWeek, 
+                                                alarm.hour, alarm.minute, alarm.daysOfWeek,
                                                 group.offsetMinutes,
-                                                alarm.temporaryOverrideTime, 
+                                                alarm.temporaryOverrideTime,
                                                 alarm.snoozeUntil,
                                                 minTime
                                             )
@@ -604,10 +647,20 @@ fun AlarmScreen(
                                     onDelete = { viewModel.deleteAlarm(alarm) },
                                     onSkipNext = {
                                         val nextRaw = AlarmUtils.getNextOccurrence(
-                                            alarm.hour, alarm.minute, alarm.daysOfWeek, group.offsetMinutes, alarm.temporaryOverrideTime, alarm.snoozeUntil
+                                            alarm.hour,
+                                            alarm.minute,
+                                            alarm.daysOfWeek,
+                                            group.offsetMinutes,
+                                            alarm.temporaryOverrideTime,
+                                            alarm.snoozeUntil
                                         )
                                         val baseNext = AlarmUtils.getNextOccurrence(
-                                            alarm.hour, alarm.minute, alarm.daysOfWeek, group.offsetMinutes, null, alarm.snoozeUntil
+                                            alarm.hour,
+                                            alarm.minute,
+                                            alarm.daysOfWeek,
+                                            group.offsetMinutes,
+                                            null,
+                                            alarm.snoozeUntil
                                         )
                                         val skipTarget = maxOf(nextRaw, baseNext)
                                         val updated = alarm.copy(skippedUntil = skipTarget + 1000)
@@ -615,7 +668,10 @@ fun AlarmScreen(
                                     },
                                     onSkipUntil = { showDatePickerForAlarm = alarm },
                                     onClearSkip = {
-                                        val updated = alarm.copy(skippedUntil = 0L, temporaryOverrideTime = null)
+                                        val updated = alarm.copy(
+                                            skippedUntil = 0L,
+                                            temporaryOverrideTime = null
+                                        )
                                         viewModel.saveAlarm(updated, false)
                                     },
                                     onAdjustTime = { viewModel.adjustAlarmTime(alarm, it) },
@@ -624,61 +680,93 @@ fun AlarmScreen(
                             }
                         }
                     )
+
                 }
 
                 item { Spacer(Modifier.height(80.dp)) }
+            }
+        }
+
+        if (!isNumpadVisible) {
+            val fabIS = remember { MutableInteractionSource() }
+            LargeFloatingActionButton(
+                onClick = {
+                    val now = Calendar.getInstance()
+                    editingAlarm = settingsViewModel.createDefaultAlarm(
+                        now.get(Calendar.HOUR_OF_DAY),
+                        now.get(Calendar.MINUTE)
+                    )
+                    isCreatingNew = true
+                },
+                interactionSource = fabIS,
+                shape = MaterialTheme.shapes.extraLarge,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+                    .bounce(fabIS)
+            ) {
+                Icon(Icons.Default.Add,
+                    contentDescription = stringResource(R.string.action_add_alarm),
+                    modifier = Modifier.size(36.dp)
+                )
+            }
         }
     }
 
-    // --- DIALOGS ---
-    if (editingAlarm != null) {
-        EditAlarmDialog(
-            alarm = editingAlarm!!,
-            allGroups = viewModel.groups,
-            onDismiss = { editingAlarm = null },
-            onSave = { resultAlarm, newGroupName, newGroupColor ->
-                if (!newGroupName.isNullOrBlank()) {
-                    // Use the new safe ViewModel function
-                    val color = newGroupColor ?: 0xFFFFFFFF.toInt()
-                    viewModel.saveAlarmWithNewGroup(resultAlarm, newGroupName, color, isCreatingNew)
-                } else {
-                    viewModel.saveAlarm(resultAlarm, isCreatingNew)
-                }
-                editingAlarm = null
-            }
-        )
-    }
-
-
-    // 1. Edit Group Name/Color
-    if (groupToEdit != null) {
-        EditGroupDialog(
-            group = groupToEdit!!,
-            onDismiss = { groupToEdit = null },
-            onSave = { name, color ->
-                if (groupToEdit!!.id.isEmpty()) {
-                    // viewModel.createGroup(name, color)
-                } else {
-                    viewModel.updateGroupDetails(groupToEdit!!, name, color)
-                }
-                groupToEdit = null
-            },
-            onDelete = { keepAlarms ->
-                if (groupToEdit!!.id.isNotEmpty()) {
-                    // keepAlarms=true: move alarms to default group
-                    // keepAlarms=false: delete alarms
-                    if (keepAlarms) {
-                        groupToEdit!!.alarms.forEach { alarm ->
-                            val updated = alarm.copy(groupId = "default")
-                            viewModel.saveAlarm(updated, false)
-                        }
+        // --- DIALOGS ---
+        if (editingAlarm != null) {
+            EditAlarmDialog(
+                alarm = editingAlarm!!,
+                allGroups = viewModel.groups,
+                onDismiss = { editingAlarm = null },
+                onSave = { resultAlarm, newGroupName, newGroupColor ->
+                    if (!newGroupName.isNullOrBlank()) {
+                        // Use the new safe ViewModel function
+                        val color = newGroupColor ?: 0xFFFFFFFF.toInt()
+                        viewModel.saveAlarmWithNewGroup(
+                            resultAlarm,
+                            newGroupName,
+                            color,
+                            isCreatingNew
+                        )
+                    } else {
+                        viewModel.saveAlarm(resultAlarm, isCreatingNew)
                     }
-                    viewModel.deleteGroup(groupToEdit!!, keepAlarms)
+                    editingAlarm = null
                 }
-                groupToEdit = null
-            }
-        )
-    }
+            )
+        }
+
+
+        // 1. Edit Group Name/Color
+        if (groupToEdit != null) {
+            EditGroupDialog(
+                group = groupToEdit!!,
+                onDismiss = { groupToEdit = null },
+                onSave = { name, color ->
+                    if (groupToEdit!!.id.isEmpty()) {
+                        // viewModel.createGroup(name, color)
+                    } else {
+                        viewModel.updateGroupDetails(groupToEdit!!, name, color)
+                    }
+                    groupToEdit = null
+                },
+                onDelete = { keepAlarms ->
+                    if (groupToEdit!!.id.isNotEmpty()) {
+                        // keepAlarms=true: move alarms to default group
+                        // keepAlarms=false: delete alarms
+                        if (keepAlarms) {
+                            groupToEdit!!.alarms.forEach { alarm ->
+                                val updated = alarm.copy(groupId = "default")
+                                viewModel.saveAlarm(updated, false)
+                            }
+                        }
+                        viewModel.deleteGroup(groupToEdit!!, keepAlarms)
+                    }
+                    groupToEdit = null
+                }
+            )
+        }
 
     // 2. Group Time Adjust
     if (groupToAdjust != null) {
@@ -700,7 +788,9 @@ fun AlarmScreen(
         QuickAdjustDialog(
             quickAdjustPresets = quickAdjustPresets,
             overrideTitle = stringResource(R.string.dialog_title_adjust_group_time),
-            currentDisplay = stringResource(R.string.adjust_all_count_alarms, groupToAdjust!!.alarms.count { it.isEnabled }),
+            currentDisplay = stringResource(
+                R.string.adjust_all_count_alarms,
+                groupToAdjust!!.alarms.count { it.isEnabled }),
             currentNextTime = nextTime, // Pass the calculated next time
             hasActiveOverride = groupToAdjust!!.alarms.any { it.temporaryOverrideTime != null },
             onDismiss = { groupToAdjust = null },

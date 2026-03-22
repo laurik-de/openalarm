@@ -279,8 +279,18 @@ fun TimerRunningView(
             verticalArrangement = Arrangement.Center
         ) {
             Text(titleText, color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold)
-            val durationText = AlarmUtils.formatDuration(context, (timer.totalDuration / 1000).toInt())
-            Text("($durationText)", color = Color.White.copy(alpha = 0.7f), fontSize = 20.sp)
+            val baseDuration = timer.durationSeconds
+            val totalSeconds = (timer.totalDuration / 1000).toInt()
+            val addedSeconds = totalSeconds - baseDuration
+            
+            val durationText = if (addedSeconds > 0) {
+                val baseStr = AlarmUtils.formatDuration(context, baseDuration)
+                val addedStr = AlarmUtils.formatDuration(context, addedSeconds)
+                "($baseStr + $addedStr)"
+            } else {
+                "(${AlarmUtils.formatDuration(context, baseDuration)})"
+            }
+            Text(durationText, color = Color.White.copy(alpha = 0.7f), fontSize = 20.sp)
 
             Spacer(Modifier.height(32.dp))
 
@@ -358,9 +368,11 @@ fun TimerRunningView(
                     val addIS = remember { MutableInteractionSource() }
                     OutlinedButton(
                         onClick = {
+                            val addedMillis = seconds * 1000L
                             val updated = timer.copy(
-                                endTime = timer.endTime + (seconds * 1000L),
-                                remainingMillis = timer.remainingMillis + (seconds * 1000L),
+                                endTime = timer.endTime + addedMillis,
+                                remainingMillis = timer.remainingMillis + addedMillis,
+                                totalDuration = timer.totalDuration + addedMillis,
                                 isPaused = false
                             )
                             AlarmRepository.updateTimer(context, updated)

@@ -224,8 +224,17 @@ fun TimerRingingScreen(startTime: Long, timerId: Int, onStop: () -> Unit, onAdd:
     val trueEndTime = timerItem?.endTime ?: startTime
     val context = LocalContext.current
     val durationText = remember(timerItem?.totalDuration, timerItem?.durationSeconds) {
-        val totalMs = timerItem?.totalDuration ?: (timerItem?.durationSeconds?.toLong()?.times(1000) ?: 0L)
-        AlarmUtils.formatDuration(context, (totalMs / 1000).toInt())
+        val baseDuration = timerItem?.durationSeconds ?: 0
+        val totalSeconds = ((timerItem?.totalDuration ?: 0L) / 1000).toInt()
+        val addedSeconds = totalSeconds - baseDuration
+        
+        if (addedSeconds > 0) {
+            val baseStr = AlarmUtils.formatDuration(context, baseDuration)
+            val addedStr = AlarmUtils.formatDuration(context, addedSeconds)
+            "$baseStr + $addedStr"
+        } else {
+            AlarmUtils.formatDuration(context, baseDuration)
+        }
     }
     var countUpStr by remember { mutableStateOf("+ 00:00") }
     var isRunning by remember(trueEndTime) { mutableStateOf(trueEndTime > System.currentTimeMillis()) }

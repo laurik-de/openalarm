@@ -273,10 +273,16 @@ object NotificationRenderer {
                 val t = timer ?: AlarmRepository.getTimer(id)
                 val VirtuallyDone = t != null && (now + 250 >= t.endTime)
                 
+                val baseTitle = if (t != null) context.getString(R.string.notif_timer_running) else context.getString(R.string.notif_timer_done)
+                val durationSuffix = if (t != null) {
+                    val total = (t.totalDuration / 1000).toInt()
+                    " (${AlarmUtils.formatDuration(context, total)})"
+                } else ""
+
                 NotifConfig(
                     layoutId = R.layout.notification_timer_running,
                     color = AlarmRepository.TIMER_RUNNING_COLOR,
-                    title = if (t != null) context.getString(R.string.notif_timer_running) else context.getString(R.string.notif_timer_done),
+                    title = baseTitle + durationSuffix,
                     channelId = "ACTIVE_TIMER_CHANNEL_ID",
                     isChronometerCountDown = (t != null && !VirtuallyDone),
                     baseTime = if (t == null || VirtuallyDone) SystemClock.elapsedRealtime() else SystemClock.elapsedRealtime() + (t.endTime - now)

@@ -96,12 +96,6 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(16.dp)
                 ) {
-                    IconButton(onClick = onClose) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            stringResource(R.string.desc_back)
-                        )
-                    }
                     Text(
                         stringResource(R.string.title_settings),
                         style = MaterialTheme.typography.headlineMedium
