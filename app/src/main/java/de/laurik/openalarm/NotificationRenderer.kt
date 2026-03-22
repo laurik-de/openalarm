@@ -457,6 +457,12 @@ object NotificationRenderer {
                 val openIntent = Intent(context, MainActivity::class.java)
                 val openPending = PendingIntent.getActivity(context, 0, openIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
+                val skipLabel = when {
+                    info.isSingleUse && info.isSelfDestroying -> context.getString(R.string.action_deactivate_and_delete)
+                    info.isSingleUse -> context.getString(R.string.action_deactivate)
+                    else -> context.getString(R.string.action_skip_today)
+                }
+
                 val note = NotificationCompat.Builder(context, "STATUS_CHANNEL_ID")
                     .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
                     .setContentTitle(context.getString(R.string.notif_next_alarm, info.timeString))
@@ -469,7 +475,7 @@ object NotificationRenderer {
                     .setOngoing(true)
                     .setOnlyAlertOnce(true)
                     .setColorized(true).setColor(AlarmRepository.NOTIF_COLOR)
-                    .addAction(android.R.drawable.ic_menu_close_clear_cancel, context.getString(R.string.action_skip_today), skipPending)
+                    .addAction(android.R.drawable.ic_menu_close_clear_cancel, skipLabel, skipPending)
                     .setContentIntent(openPending)
                     .build()
                 nm.notify(2, note)

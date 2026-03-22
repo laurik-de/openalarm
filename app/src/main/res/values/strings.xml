@@ -27,6 +27,8 @@
     <string name="header_disabled">Disabled</string>
     <string name="no_alarms_create_one">No alarms. Tap + to add one.</string>
     <string name="action_skip_today">Skip Today</string>
+    <string name="action_deactivate">Deactivate</string>
+    <string name="action_deactivate_and_delete">Deactivate and Delete</string>
     <string name="action_add_alarm">Add Alarm</string>
     <string name="action_add_timer">Add Timer</string>
 
