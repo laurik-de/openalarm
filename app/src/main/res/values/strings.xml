@@ -55,6 +55,8 @@
     <string name="hint_group_name">Group Name</string>
     <string name="action_create_new_group">Create New Group…</string>
     <string name="action_add_to_group">+ Add Alarm to Group</string>
+    <string name="label_alarm_group">Alarm Group</string>
+    <string name="label_new_group_name">New Group Name</string>
 
     <!-- Alarm Configuration -->
     <string name="title_new_alarm">New Alarm</string>
@@ -114,6 +116,12 @@
     <string name="hint_custom_tts_text">e.g., "Wake up! It\'s %time%"</string>
     <string name="desc_tts_variables" formatted="false">Available variables: %label%, %day%, %time%</string>
     <string name="label_tts_frequency">TTS Frequency</string>
+    <string name="action_open_keyboard">Open Keyboard</string>
+    <string name="timer_label_remaining">remaining</string>
+    <string name="action_pause">Pause</string>
+    <string name="action_resume">Resume</string>
+    <string name="title_alarm">Alarm</string>
+    <string name="title_timer">Timer</string>
 
     <!-- Ringing Screen -->
     <string name="label_alarm">Alarm</string>
@@ -135,6 +143,7 @@
     <string name="notif_alarm_silent_ringing">Alarm "%1$s" is ringing (Silent)</string>
     <string name="notif_alarm_silent_ringing_no_label">Alarm is ringing (silent)</string>
     <string name="notif_timer_running">Timer Running</string>
+    <string name="notif_timer_paused">Timer Paused</string>
     <string name="notif_timer_done">Timer Done!</string>
     <string name="notif_wake_up">Wake Up!</string>
     <string name="notif_alarm_missed">Alarm missed</string>

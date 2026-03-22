@@ -254,7 +254,26 @@ object AlarmRepository {
         } else {
             InternalDataStore.activeTimers.add(timer)
         }
-        scope.launch { AppDatabase.getDatabase(context).alarmDao().insertTimer(timer) }
+        scope.launch { 
+            AppDatabase.getDatabase(context).alarmDao().insertTimer(timer)
+            NotificationRenderer.refreshAll(context)
+        }
+    }
+
+    fun pauseTimer(context: Context, timer: TimerItem) {
+        val now = System.currentTimeMillis()
+        val remaining = maxOf(0L, timer.endTime - now)
+        val updated = timer.copy(isPaused = true, remainingMillis = remaining)
+        updateTimer(context, updated)
+        AlarmScheduler(context).cancelById(timer.id)
+    }
+
+    fun resumeTimer(context: Context, timer: TimerItem) {
+        val now = System.currentTimeMillis()
+        val newEndTime = now + timer.remainingMillis
+        val updated = timer.copy(isPaused = false, remainingMillis = 0L, endTime = newEndTime)
+        updateTimer(context, updated)
+        AlarmScheduler(context).scheduleExact(newEndTime, timer.id, "TIMER", "")
     }
 
     fun removeTimer(context: Context, id: Int) {

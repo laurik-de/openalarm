@@ -1,5 +1,8 @@
 package de.laurik.openalarm
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -15,6 +18,7 @@ import androidx.compose.runtime.*
 import de.laurik.openalarm.ui.theme.bounce
 import de.laurik.openalarm.ui.theme.bounceClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -89,266 +93,286 @@ fun EditAlarmDialog(
             decorFitsSystemWindows = true
         )
     ) {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = {
-                        Text(
-                            if (alarm.id == 0) stringResource(R.string.title_new_alarm) else stringResource(
-                                R.string.title_edit_alarm
-                            )
-                        )
-                    }
-                )
-            },
-            bottomBar = {
-                Surface(tonalElevation = 2.dp) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                            .navigationBarsPadding(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        val cancelIS = remember { MutableInteractionSource() }
-                        TextButton(
-                            onClick = onDismiss,
-                            modifier = Modifier.weight(1f).bounce(cancelIS),
-                            interactionSource = cancelIS
-                        ) { Text(stringResource(R.string.action_cancel)) }
+        var isNumpadActive by remember { mutableStateOf(false) }
 
-                        val saveIS = remember { MutableInteractionSource() }
-                        Button(
-                            onClick = {
-                                val updated = alarm.copy(
-                                    hour = hour,
-                                    minute = minute,
-                                    label = label,
-                                    daysOfWeek = daysOfWeek,
-                                    vibrationEnabled = vibration,
-                                    ringtoneUri = currentUriStr,
-                                    customVolume = customVolume,
-                                    fadeInSeconds = fadeInSeconds,
-                                    ttsMode = ttsMode,
-                                    ttsText = ttsText.ifBlank { null },
-                                    groupId = selectedGroupId,
-                                    snoozeDuration = snoozeOverride,
-                                    autoStopDuration = autoStopOverride,
-                                    isSnoozeEnabled = isSnoozeEnabled,
-                                    directSnooze = directSnooze,
-                                    maxSnoozes = maxSnoozes,
-                                    snoozePresets = snoozePresets,
-                                    isSingleUse = isSingleUse,
-                                    isSelfDestroying = isSelfDestroying,
-                                    ringingScreenMode = ringingScreenMode,
-                                    backgroundType = backgroundType,
-                                    backgroundValue = backgroundValue
+        Box(Modifier.fillMaxSize()) {
+            Scaffold(
+                topBar = {
+                    TopAppBar(
+                        title = {
+                            Text(
+                                if (alarm.id == 0) stringResource(R.string.title_new_alarm) else stringResource(
+                                    R.string.title_edit_alarm
                                 )
-                                if (isNewGroupMode && newGroupName.isNotBlank()) {
-                                    onSave(
-                                        updated,
-                                        newGroupName,
-                                        selectedColor
-                                    )
-                                } else {
-                                    onSave(updated, null, null)
+                            )
+                        }
+                    )
+                },
+                bottomBar = {
+                    if (!isNumpadActive) {
+                        Surface(tonalElevation = 2.dp) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp)
+                                    .navigationBarsPadding(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                val cancelIS = remember { MutableInteractionSource() }
+                                TextButton(
+                                    onClick = onDismiss,
+                                    modifier = Modifier.weight(1f).bounce(cancelIS),
+                                    interactionSource = cancelIS
+                                ) { Text(stringResource(R.string.action_cancel)) }
+
+                                val saveIS = remember { MutableInteractionSource() }
+                                Button(
+                                    onClick = {
+                                        val updated = alarm.copy(
+                                            hour = hour,
+                                            minute = minute,
+                                            label = label,
+                                            daysOfWeek = daysOfWeek,
+                                            vibrationEnabled = vibration,
+                                            ringtoneUri = currentUriStr,
+                                            customVolume = customVolume,
+                                            fadeInSeconds = fadeInSeconds,
+                                            ttsMode = ttsMode,
+                                            ttsText = ttsText.ifBlank { null },
+                                            groupId = selectedGroupId,
+                                            snoozeDuration = snoozeOverride,
+                                            autoStopDuration = autoStopOverride,
+                                            isSnoozeEnabled = isSnoozeEnabled,
+                                            directSnooze = directSnooze,
+                                            maxSnoozes = maxSnoozes,
+                                            snoozePresets = snoozePresets,
+                                            isSingleUse = isSingleUse,
+                                            isSelfDestroying = isSelfDestroying,
+                                            ringingScreenMode = ringingScreenMode,
+                                            backgroundType = backgroundType,
+                                            backgroundValue = backgroundValue
+                                        )
+                                        if (isNewGroupMode && newGroupName.isNotBlank()) {
+                                            onSave(
+                                                updated,
+                                                newGroupName,
+                                                selectedColor
+                                            )
+                                        } else {
+                                            onSave(updated, null, null)
+                                        }
+                                    },
+                                    modifier = Modifier.weight(1.5f).bounce(saveIS).height(56.dp),
+                                    interactionSource = saveIS,
+                                    shape = MaterialTheme.shapes.medium
+                                ) {
+                                    Icon(Icons.Default.Check, null)
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(stringResource(R.string.action_save), fontWeight = FontWeight.Bold)
                                 }
-                            },
-                            modifier = Modifier.weight(1.5f).bounce(saveIS).height(56.dp),
-                            interactionSource = saveIS,
-                            shape = MaterialTheme.shapes.medium
-                        ) {
-                            Icon(Icons.Default.Check, null)
-                            Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.action_save), fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
                 }
-            }
-        ) { padding ->
-            Box(modifier = Modifier.padding(padding).fillMaxSize().imePadding()) {
-                SmartTimePickerLayout(
-                    hour = hour, minute = minute, snapImmediately = true,
-                    onTimeChange = { h, m, _ -> hour = h; minute = m }
-                ) { wheelContent, numpadContent ->
-                    Column(modifier = Modifier.fillMaxSize()) {
-                        Column(
-                            modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Spacer(Modifier.height(24.dp))
-                            wheelContent()
-                            Spacer(Modifier.height(24.dp))
+            ) { padding ->
+                Box(modifier = Modifier.padding(padding).fillMaxSize().imePadding()) {
+                    SmartTimePickerLayout(
+                        hour = hour, minute = minute, snapImmediately = true,
+                        onTimeChange = { h, m, _ -> hour = h; minute = m }
+                    ) { wheelContent, numpadContent, onDismissRequest ->
+                        isNumpadActive = numpadContent != null
+                        Column(modifier = Modifier.fillMaxSize()) {
+                            Column(
+                                modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Spacer(Modifier.height(24.dp))
+                                wheelContent()
+                                Spacer(Modifier.height(24.dp))
 
-                            if (numpadContent == null) {
-                                Spacer(Modifier.height(16.dp))
+                                if (numpadContent == null) {
+                                    Spacer(Modifier.height(16.dp))
 
-                                HorizontalDivider(Modifier.padding(horizontal = 16.dp))
+                                    HorizontalDivider(Modifier.padding(horizontal = 16.dp))
 
-                                AlarmConfigSection(
-                                    label = label,
-                                    onLabelChange = { label = it },
-                                    vibration = vibration,
-                                    onVibrationChange = { vibration = it },
-                                    ringtoneUri = currentUriStr,
-                                    onRingtoneChange = { currentUriStr = it },
-                                    customVolume = customVolume,
-                                    onVolumeChange = { customVolume = it },
-                                    fadeInSeconds = fadeInSeconds,
-                                    onFadeInChange = { fadeInSeconds = it },
-                                    ttsMode = ttsMode,
-                                    onTtsModeChange = { ttsMode = it },
-                                    ttsText = ttsText,
-                                    onTtsTextChange = { ttsText = it },
-                                    isSingleUse = isSingleUse,
-                                    onSingleUseChange = {
-                                        isSingleUse = it
-                                        if (!it) isSelfDestroying = false
-                                    },
-                                    isSelfDestroying = isSelfDestroying,
-                                    onSelfDestroyingChange = { isSelfDestroying = it },
-                                    daysOfWeek = daysOfWeek,
-                                    onDaysOfWeekChange = { daysOfWeek = it },
-                                    isSnoozeEnabled = isSnoozeEnabled,
-                                    onSnoozeEnabledChange = { isSnoozeEnabled = it },
-                                    snoozeDuration = snoozeOverride,
-                                    onSnoozeDurationChange = { showSnoozeEdit = true },
-                                    maxSnoozes = maxSnoozes,
-                                    onMaxSnoozesChange = { showMaxSnoozeEdit = true },
-                                    autoStopDuration = autoStopOverride,
-                                    onAutoStopDurationChange = { showAutoStopEdit = true },
-                                    directSnooze = directSnooze,
-                                    onDirectSnoozeChange = { directSnooze = it },
-                                    snoozePresets = snoozePresets,
-                                    onSnoozePresetsChange = { showSnoozePresetsEdit = true },
-                                    ringingMode = ringingScreenMode,
-                                    onRingingModeChange = { ringingScreenMode = it },
-                                    backgroundType = backgroundType,
-                                    onBackgroundTypeChange = { backgroundType = it; showBackgroundPicker = true },
-                                    backgroundValue = backgroundValue,
-                                    onBackgroundValueChange = { /* picker handles this */ },
-                                    globalSnooze = globalSnooze,
-                                    globalAutoStop = globalAutoStop,
-                                    showDefaultRingingMode = true
-                                )
-                                HorizontalDivider()
+                                    AlarmConfigSection(
+                                        label = label,
+                                        onLabelChange = { label = it },
+                                        vibration = vibration,
+                                        onVibrationChange = { vibration = it },
+                                        ringtoneUri = currentUriStr,
+                                        onRingtoneChange = { currentUriStr = it },
+                                        customVolume = customVolume,
+                                        onVolumeChange = { customVolume = it },
+                                        fadeInSeconds = fadeInSeconds,
+                                        onFadeInChange = { fadeInSeconds = it },
+                                        ttsMode = ttsMode,
+                                        onTtsModeChange = { ttsMode = it },
+                                        ttsText = ttsText,
+                                        onTtsTextChange = { ttsText = it },
+                                        isSingleUse = isSingleUse,
+                                        onSingleUseChange = {
+                                            isSingleUse = it
+                                            if (!it) isSelfDestroying = false
+                                        },
+                                        isSelfDestroying = isSelfDestroying,
+                                        onSelfDestroyingChange = { isSelfDestroying = it },
+                                        daysOfWeek = daysOfWeek,
+                                        onDaysOfWeekChange = { daysOfWeek = it },
+                                        isSnoozeEnabled = isSnoozeEnabled,
+                                        onSnoozeEnabledChange = { isSnoozeEnabled = it },
+                                        snoozeDuration = snoozeOverride,
+                                        onSnoozeDurationChange = { showSnoozeEdit = true },
+                                        maxSnoozes = maxSnoozes,
+                                        onMaxSnoozesChange = { showMaxSnoozeEdit = true },
+                                        autoStopDuration = autoStopOverride,
+                                        onAutoStopDurationChange = { showAutoStopEdit = true },
+                                        directSnooze = directSnooze,
+                                        onDirectSnoozeChange = { directSnooze = it },
+                                        snoozePresets = snoozePresets,
+                                        onSnoozePresetsChange = { showSnoozePresetsEdit = true },
+                                        ringingMode = ringingScreenMode,
+                                        onRingingModeChange = { ringingScreenMode = it },
+                                        backgroundType = backgroundType,
+                                        onBackgroundTypeChange = { backgroundType = it; showBackgroundPicker = true },
+                                        backgroundValue = backgroundValue,
+                                        onBackgroundValueChange = { /* picker handles this */ },
+                                        globalSnooze = globalSnooze,
+                                        globalAutoStop = globalAutoStop
+                                    )
 
-                                // Group Selector
-                                Column(Modifier.padding(12.dp)) {
-                                    Text(stringResource(R.string.label_group), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(vertical = 12.dp))
-                                    Spacer(Modifier.height(8.dp))
+                                    HorizontalDivider(Modifier.padding(horizontal = 16.dp))
 
-                                    if (isNewGroupMode) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            OutlinedTextField(
-                                                value = newGroupName,
-                                                onValueChange = { newGroupName = it },
-                                                label = { Text(stringResource(R.string.hint_group_name)) },
-                                                modifier = Modifier.weight(1f)
-                                            )
-                                            val groupCancelIS = remember { MutableInteractionSource() }
-                                            IconButton(onClick = { isNewGroupMode = false }, interactionSource = groupCancelIS, modifier = Modifier.bounce(groupCancelIS)) {
-                                                Icon(Icons.Default.Close, contentDescription = null)
-                                            }
-                                        }
-                                        // Color Picker
-                                        Row(
-                                            Modifier.padding(top = 8.dp),
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                        ) {
-                                            groupColors.forEach { colorLong ->
-                                                val colorInt = colorLong.toInt()
-                                                val isSelected = selectedColor == colorInt
-                                                Box(
-                                                    modifier = Modifier
-                                                        .size(36.dp)
-                                                        .clip(CircleShape)
-                                                        .background(Color(colorInt))
-                                                        .border(
-                                                            width = if (selectedColor == colorInt) 3.dp else 1.dp,
-                                                            color = if (selectedColor == colorInt) MaterialTheme.colorScheme.primary else Color.LightGray.copy(alpha = 0.5f),
-                                                            shape = CircleShape
-                                                        )
-                                                        .bounceClickable { selectedColor = colorInt },
-                                                    contentAlignment = Alignment.Center
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp)
+                                    ) {
+                                        Text(
+                                            stringResource(R.string.label_alarm_group),
+                                            style = MaterialTheme.typography.titleSmall,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                        Spacer(Modifier.height(8.dp))
+
+                                        if (isNewGroupMode) {
+                                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                OutlinedTextField(
+                                                    value = newGroupName,
+                                                    onValueChange = { newGroupName = it },
+                                                    label = { Text(stringResource(R.string.label_new_group_name)) },
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    singleLine = true,
+                                                    trailingIcon = {
+                                                        IconButton(onClick = {
+                                                            isNewGroupMode = false
+                                                        }) {
+                                                            Icon(Icons.Default.Close, null)
+                                                        }
+                                                    }
+                                                )
+                                                Row(
+                                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                    modifier = Modifier.fillMaxWidth()
                                                 ) {
-                                                    if (isSelected) {
-                                                        Icon(
-                                                            Icons.Default.Check,
-                                                            null,
-                                                            tint = Color.Black.copy(alpha = 0.6f)
-                                                        )
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    } else {
-                                        Box {
-                                            val currentGroup =
-                                                allGroups.find { it.id == selectedGroupId }
-                                            val currentGroupName =
-                                                if (currentGroup == null || currentGroup.id == "default")
-                                                    stringResource(R.string.action_add_to_group)
-                                                else
-                                                    currentGroup.name
-
-                                            OutlinedButton(
-                                                onClick = { groupDropdownExpanded = true },
-                                                modifier = Modifier.fillMaxWidth()
-                                            ) {
-                                                Text(
-                                                    currentGroupName,
-                                                    color = MaterialTheme.colorScheme.onSurface
-                                                )
-                                            }
-
-                                            DropdownMenu(
-                                                expanded = groupDropdownExpanded,
-                                                onDismissRequest = {
-                                                    groupDropdownExpanded = false
-                                                }
-                                            ) {
-                                                DropdownMenuItem(
-                                                    text = { Text(stringResource(R.string.label_no_group)) },
-                                                    onClick = {
-                                                        selectedGroupId = "default"
-                                                        groupDropdownExpanded = false
-                                                    }
-                                                )
-                                                HorizontalDivider()
-                                                allGroups.filter { it.id != "default" }
-                                                    .forEach { group ->
-                                                        DropdownMenuItem(
-                                                            text = { Text(group.name) },
-                                                            onClick = {
-                                                                selectedGroupId = group.id
-                                                                groupDropdownExpanded = false
+                                                    groupColors.forEach { colorLong ->
+                                                        val colorInt = colorLong.toInt()
+                                                        val isSelected = selectedColor == colorInt
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .size(36.dp)
+                                                                .clip(CircleShape)
+                                                                .background(Color(colorInt))
+                                                                .border(
+                                                                    width = if (selectedColor == colorInt) 3.dp else 1.dp,
+                                                                    color = if (selectedColor == colorInt) MaterialTheme.colorScheme.primary else Color.LightGray.copy(alpha = 0.5f),
+                                                                    shape = CircleShape
+                                                                )
+                                                                .bounceClickable { selectedColor = colorInt },
+                                                            contentAlignment = Alignment.Center
+                                                        ) {
+                                                            if (isSelected) {
+                                                                Icon(
+                                                                    Icons.Default.Check,
+                                                                    null,
+                                                                    tint = Color.Black.copy(alpha = 0.6f)
+                                                                )
                                                             }
-                                                        )
+                                                        }
                                                     }
-                                                HorizontalDivider()
-                                                DropdownMenuItem(
-                                                    text = { Text(stringResource(R.string.action_create_new_group)) },
-                                                    onClick = {
-                                                        isNewGroupMode = true
+                                                }
+                                            }
+                                        } else {
+                                            Box {
+                                                val currentGroup =
+                                                    allGroups.find { it.id == selectedGroupId }
+                                                val currentGroupName =
+                                                    if (currentGroup == null || currentGroup.id == "default")
+                                                        stringResource(R.string.action_add_to_group)
+                                                    else
+                                                        currentGroup.name
+
+                                                OutlinedButton(
+                                                    onClick = { groupDropdownExpanded = true },
+                                                    modifier = Modifier.fillMaxWidth()
+                                                ) {
+                                                    Text(
+                                                        currentGroupName,
+                                                        color = MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                }
+
+                                                DropdownMenu(
+                                                    expanded = groupDropdownExpanded,
+                                                    onDismissRequest = {
                                                         groupDropdownExpanded = false
                                                     }
-                                                )
+                                                ) {
+                                                    DropdownMenuItem(
+                                                        text = { Text(stringResource(R.string.label_no_group)) },
+                                                        onClick = {
+                                                            selectedGroupId = "default"
+                                                            groupDropdownExpanded = false
+                                                        }
+                                                    )
+                                                    HorizontalDivider()
+                                                    allGroups.filter { it.id != "default" }
+                                                        .forEach { group ->
+                                                            DropdownMenuItem(
+                                                                text = { Text(group.name) },
+                                                                onClick = {
+                                                                    selectedGroupId = group.id
+                                                                    groupDropdownExpanded = false
+                                                                }
+                                                            )
+                                                        }
+                                                    HorizontalDivider()
+                                                    DropdownMenuItem(
+                                                        text = { Text(stringResource(R.string.action_create_new_group)) },
+                                                        onClick = {
+                                                            isNewGroupMode = true
+                                                            groupDropdownExpanded = false
+                                                        }
+                                                    )
+                                                }
                                             }
                                         }
                                     }
                                 }
                             }
-                        }
-
-                        // Bottom Actions (Numpad support only)
-                        if (numpadContent != null) {
-                            Surface(
-                                shadowElevation = 8.dp,
-                                color = MaterialTheme.colorScheme.surfaceContainerHighest
-                            ) {
-                                numpadContent()
+                            
+                            if (numpadContent != null) {
+                                Surface(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
+                                    tonalElevation = 8.dp,
+                                    shadowElevation = 16.dp
+                                ) {
+                                    Column(Modifier.navigationBarsPadding().padding(bottom = 16.dp)) {
+                                        numpadContent()
+                                    }
+                                }
                             }
                         }
                     }

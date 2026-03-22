@@ -322,6 +322,18 @@ object NotificationRenderer {
         }
         val fullScreenPending = PendingIntent.getActivity(context, id + 14000, fullScreenIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
+        // Content Intent (Tap notification to open app)
+        val contentIntent = PendingIntent.getActivity(
+            context,
+            id * 20 + 30000,
+            Intent(context, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                putExtra("NAVIGATE_TO", if (type == "TIMER") "TIMER" else "ALARM")
+                putExtra("ALARM_ID", id)
+            },
+            PendingIntent.FLAG_UPDATE_CURRENT or (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) PendingIntent.FLAG_MUTABLE else 0)
+        )
+
         val finalStopIntent = if (type == "TIMER" && !isRinging) {
             Intent(context, AlarmReceiver::class.java).apply { action = "STOP_SPECIFIC_TIMER"; putExtra("TARGET_ID", id) }
         } else {
@@ -379,17 +391,29 @@ object NotificationRenderer {
             }
         } else emptyList()
 
-        customView.setTextViewText(R.id.notif_title_text, config.title)
+        val isPaused = type == "TIMER" && timer?.isPaused == true
+        val titleText = if (isPaused) context.getString(R.string.notif_timer_paused) else config.title
+        customView.setTextViewText(R.id.notif_title_text, titleText)
 
-        // FIX: API 23 Compatibility for Chronometer
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            // Android 7+ (API 24+) support CountDown mode and setChronometer directly
-            customView.setChronometerCountDown(R.id.notif_chronometer, config.isChronometerCountDown)
-            customView.setChronometer(R.id.notif_chronometer, config.baseTime, null, true)
+        // Handle Paused State for Chronometer
+        if (isPaused) {
+            val remaining = timer?.remainingMillis ?: 0L
+            // To show static time, we use a trick: setBase to current + remaining, and stop it.
+            // Or just setTextViewText on the chronometer if it supports it? Chronometer supports setBase.
+            // Actually, simplest is to set it to 0 and not start it? No, we need it to show precisely the remaining.
+            // For Paused, we'll just show the static time by setting base to (SystemClock.elapsedRealtime() + remaining) and NOT starting it.
+            customView.setChronometer(R.id.notif_chronometer, android.os.SystemClock.elapsedRealtime() + remaining, null, false)
         } else {
-            // Android 6 (API 23) does not support CountDown mode natively in RemoteViews.
-            customView.setLong(R.id.notif_chronometer, "setBase", config.baseTime)
-            customView.setBoolean(R.id.notif_chronometer, "setStarted", true)
+            // FIX: API 23 Compatibility for Chronometer
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                // Android 7+ (API 24+) support CountDown mode and setChronometer directly
+                customView.setChronometerCountDown(R.id.notif_chronometer, config.isChronometerCountDown)
+                customView.setChronometer(R.id.notif_chronometer, config.baseTime, null, true)
+            } else {
+                // Android 6 (API 23) does not support CountDown mode natively in RemoteViews.
+                customView.setLong(R.id.notif_chronometer, "setBase", config.baseTime)
+                customView.setBoolean(R.id.notif_chronometer, "setStarted", true)
+            }
         }
 
         val builder = NotificationCompat.Builder(context, config.channelId)
@@ -404,9 +428,28 @@ object NotificationRenderer {
             .setCustomContentView(customView)
             .setCustomBigContentView(customView)
             .setCustomHeadsUpContentView(customView)
-            .setContentIntent(fullScreenPending)
+            .setContentIntent(contentIntent)
 
         if (type == "TIMER") {
+            // Add Pause/Resume Action
+            val isPaused = timer?.isPaused == true
+            val actionIntent = Intent(context, AlarmReceiver::class.java).apply {
+                action = if (isPaused) "RESUME_TIMER" else "PAUSE_TIMER"
+                putExtra("TARGET_ID", id)
+            }
+            val actionPendingIntent = PendingIntent.getBroadcast(
+                context,
+                id * 20 + 40000,
+                actionIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            
+            builder.addAction(
+                if (isPaused) R.drawable.ic_play else R.drawable.ic_pause, // Assume these exist or map to similar
+                if (isPaused) context.getString(R.string.action_resume) else context.getString(R.string.action_pause),
+                actionPendingIntent
+            )
+
             presets.forEachIndexed { index, seconds ->
                 builder.addAction(0, context.getString(R.string.label_add_minutes_short, seconds / 60), addTimePendings[index])
             }

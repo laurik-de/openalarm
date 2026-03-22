@@ -238,20 +238,18 @@ fun TimerRingingScreen(startTime: Long, timerId: Int, onStop: () -> Unit, onAdd:
             isRunning = trueEndTime > now
             val diff = now - trueEndTime
             if (isRunning) {
-                // Running state: show remaining
+                // Running state: use precision formatter
                 val remaining = (trueEndTime - now).coerceAtLeast(0)
-                val totalSec = (remaining / 1000).toInt()
-                val m = totalSec / 60
-                val s = totalSec % 60
-                countUpStr = String.format(Locale.getDefault(), "%02d:%02d", m, s)
+                countUpStr = AlarmUtils.formatTimerTime(remaining)
             } else {
                 // Done state: count up from end time
                 val d = if (diff < 0) 0 else diff
                 val s = (d / 1000) % 60
                 val m = (d / (1000 * 60))
-                countUpStr = String.format(Locale.getDefault(), "+ %02d:%02d", m, s)
+                countUpStr = String.format(java.util.Locale.getDefault(), "+ %02d:%02d", m, s)
             }
-            delay(500)
+            // Faster update for sub-minute precision
+            delay(if (isRunning && (trueEndTime - System.currentTimeMillis()) < 60000) 50 else 500)
         }
     }
     Box(modifier = Modifier.fillMaxSize().background(bgColor)) {
@@ -275,26 +273,33 @@ fun TimerRingingScreen(startTime: Long, timerId: Int, onStop: () -> Unit, onAdd:
             Text(titleText, color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold)
             Text("($durationText)", color = Color.White.copy(alpha = 0.7f), fontSize = 20.sp)
             Spacer(Modifier.height(32.dp))
-            Text(countUpStr, color = Color.White, fontSize = 90.sp, fontWeight = FontWeight.Bold)
+            Text(
+                text = countUpStr,
+                color = Color.White,
+                fontSize = if (isRunning && (trueEndTime - System.currentTimeMillis()) < 60000) 100.sp else 90.sp,
+                fontWeight = FontWeight.Bold
+            )
             Spacer(Modifier.height(64.dp))
 
             Button(
                 onClick = onStop,
                 colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-                modifier = Modifier.fillMaxWidth().height(64.dp)
+                modifier = Modifier.fillMaxWidth().height(64.dp),
+                shape = MaterialTheme.shapes.large
             ) {
-                Text(stringResource(R.string.action_stop_caps), fontSize = 24.sp, color = Color.Red)
+                Text(stringResource(R.string.action_stop_caps), fontSize = 24.sp, color = Color.Red, fontWeight = FontWeight.Bold)
             }
             val settingsRepo = remember { SettingsRepository.getInstance(context) }
             val adjustPresets by settingsRepo.timerAdjustPresets.collectAsState(initial = listOf(60, 300))
 
-            Text(stringResource(R.string.label_add_time), color = Color.White)
+            Text(stringResource(R.string.label_add_time), color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
+            Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                 adjustPresets.forEach { seconds ->
                     OutlinedButton(
                         onClick = { onAdd(seconds) },
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White),
-                        modifier = Modifier.padding(horizontal = 4.dp)
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.5f)),
+                        modifier = Modifier.padding(horizontal = 4.dp).height(40.dp)
                     ) {
                         Text("+${seconds / 60}m", color = Color.White)
                     }

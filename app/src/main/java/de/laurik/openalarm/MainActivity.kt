@@ -32,14 +32,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import android.app.AlarmManager
 import android.net.Uri
 import android.provider.Settings
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Timer
-import androidx.compose.material.icons.filled.Alarm
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -47,6 +41,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.clickable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
@@ -56,8 +52,18 @@ import kotlin.collections.associate
 import de.laurik.openalarm.ui.theme.effectsSpring
 import de.laurik.openalarm.ui.theme.bounce
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.background
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import de.laurik.openalarm.ui.theme.bounceClickable
 
 class MainActivity : ComponentActivity() {
+    private var pendingNavTarget by mutableStateOf<String?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -65,11 +71,31 @@ class MainActivity : ComponentActivity() {
         createNotificationChannels()
         checkPermissions()
 
+        handleIntent(intent)
+
         setContent {
             val settingsViewModel = viewModel<SettingsViewModel>()
             val themeMode by settingsViewModel.themeMode.collectAsState()
             val isPureBlack by settingsViewModel.isPureBlack.collectAsState()
             var showSettings by remember { mutableStateOf(false) }
+
+            // Navigation State
+            var currentScreen by remember { 
+                mutableStateOf(pendingNavTarget?.let { if (it == "TIMER") Screen.TIMER else Screen.ALARM } ?: Screen.ALARM) 
+            }
+            
+            // Listen for external navigation requests (like from notifications)
+            LaunchedEffect(pendingNavTarget) {
+                pendingNavTarget?.let { target ->
+                    android.util.Log.d("OpenAlarm", "Navigating to $target")
+                    if (target == "TIMER") {
+                        currentScreen = Screen.TIMER
+                    } else if (target == "ALARM") {
+                        currentScreen = Screen.ALARM
+                    }
+                    pendingNavTarget = null // Clear after handling
+                }
+            }
 
             BackHandler(enabled = showSettings) {
                 showSettings = false
@@ -92,13 +118,24 @@ class MainActivity : ComponentActivity() {
             }
 
             de.laurik.openalarm.ui.theme.OpenAlarmTheme(themeMode = themeMode, isPureBlack = isPureBlack) {
-                if (showSettings) {
-                    SettingsScreen(settingsViewModel, onClose = { showSettings = false })
-                } else {
-                    Dashboard(onSettingsClick = { showSettings = true })
-                    CheckSystemPermissions()
-                }
+                MainContent(settingsViewModel, currentScreen) { currentScreen = it }
+                CheckSystemPermissions()
             }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent) {
+        val target = intent.getStringExtra("NAVIGATE_TO")
+        android.util.Log.d("OpenAlarm", "handleIntent: target=$target")
+        if (target != null) {
+            pendingNavTarget = target
+            intent.removeExtra("NAVIGATE_TO") // Clean up so it doesn't re-trigger on config change
         }
     }
 
@@ -236,22 +273,162 @@ fun CheckSystemPermissions() {
     }
 }
 
+enum class Screen { ALARM, TIMER, SETTINGS }
+
+@Composable
+fun MainContent(settingsViewModel: SettingsViewModel, currentScreen: Screen, onScreenChange: (Screen) -> Unit) {
+    val dashboardViewModel: DashboardViewModel = viewModel()
+    
+    val activeTimers = dashboardViewModel.activeTimers
+    val currentTime by dashboardViewModel.currentTime.collectAsStateWithLifecycle()
+
+    var showAlarmDialogForNew by remember { mutableStateOf(false) }
+    var triggerStartTimer by remember { mutableLongStateOf(0L) }
+    var globalNumpad by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            topBar = {
+                // Status Bar (Keep existing logic if any)
+            },
+            bottomBar = {
+                Column {
+                    // Small overlay bar for current timer (Keep it)
+                    val activeTimers = dashboardViewModel.activeTimers
+                    val currentTime by dashboardViewModel.currentTime.collectAsStateWithLifecycle()
+                    
+                    if (activeTimers.isNotEmpty() && currentScreen != Screen.TIMER) {
+                        val timer = activeTimers.first()
+                        val diff = timer.endTime - currentTime
+                        val progress = if (timer.totalDuration > 0) 1f - (diff.toFloat() / timer.totalDuration) else 0f
+                        
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp)
+                                .bounceClickable { onScreenChange(Screen.TIMER) },
+                            color = MaterialTheme.colorScheme.surfaceContainer,
+                            tonalElevation = 4.dp
+                        ) {
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxHeight()
+                                        .fillMaxWidth(progress.coerceIn(0f, 1f))
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
+                                )
+                                Row(
+                                    modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(stringResource(R.string.title_timer), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                                    Text(
+                                        if (diff > 0L) AlarmUtils.formatTimerTime(diff) else stringResource(R.string.timer_ringing),
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    
+                    NavigationBar {
+                        NavigationBarItem(
+                            icon = { Icon(Icons.Default.Alarm, null) },
+                            label = { Text(stringResource(R.string.title_alarm)) },
+                            selected = currentScreen == Screen.ALARM,
+                            onClick = { onScreenChange(Screen.ALARM) }
+                        )
+                        NavigationBarItem(
+                            icon = { Icon(Icons.Default.Timer, null) },
+                            label = { Text(stringResource(R.string.title_timer)) },
+                            selected = currentScreen == Screen.TIMER,
+                            onClick = { onScreenChange(Screen.TIMER) }
+                        )
+                        NavigationBarItem(
+                            icon = { Icon(Icons.Default.Settings, null) },
+                            label = { Text(stringResource(R.string.title_settings)) },
+                            selected = currentScreen == Screen.SETTINGS,
+                            onClick = { onScreenChange(Screen.SETTINGS) }
+                        )
+                    }
+                }
+            },
+            floatingActionButton = {
+                if (currentScreen == Screen.ALARM && globalNumpad == null) {
+                    val fabIS = remember { MutableInteractionSource() }
+                    LargeFloatingActionButton(
+                        onClick = { showAlarmDialogForNew = true },
+                        interactionSource = fabIS,
+                        shape = MaterialTheme.shapes.extraLarge,
+                        modifier = Modifier.bounce(fabIS)
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.action_add_alarm), modifier = Modifier.size(36.dp))
+                    }
+                }
+            }
+        ) { paddingValues ->
+            Box(modifier = Modifier.padding(paddingValues)) {
+                when (currentScreen) {
+                    Screen.ALARM -> AlarmScreen(dashboardViewModel, settingsViewModel, showAlarmDialogForNew, onAlarmDialogDismiss = { showAlarmDialogForNew = false })
+                    Screen.TIMER -> TimerScreen(dashboardViewModel, settingsViewModel.timerPresets.collectAsState().value, triggerStartTimer, onNumpadChange = { globalNumpad = it })
+                    Screen.SETTINGS -> SettingsScreen(settingsViewModel, onClose = { onScreenChange(Screen.ALARM) })
+                }
+            }
+        }
+
+        // Global Numpad Overlay (Non-Popup)
+        AnimatedVisibility(
+            visible = globalNumpad != null,
+            modifier = Modifier.align(Alignment.BottomCenter),
+            enter = slideInVertically { it } + fadeIn(),
+            exit = slideOutVertically { it } + fadeOut()
+        ) {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
+                tonalElevation = 8.dp,
+                shadowElevation = 16.dp
+            ) {
+                Column(Modifier.navigationBarsPadding().padding(bottom = 16.dp)) {
+                    globalNumpad?.invoke()
+                }
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun Dashboard(viewModel: DashboardViewModel = viewModel(), settingsViewModel: SettingsViewModel = viewModel(), onSettingsClick: () -> Unit) {
+fun AlarmScreen(
+    viewModel: DashboardViewModel,
+    settingsViewModel: SettingsViewModel,
+    triggerCreateAlarm: Boolean = false,
+    onAlarmDialogDismiss: () -> Unit = {}
+) {
     val context = LocalContext.current
     
     // Collect preset settings
     val quickAdjustPresets by settingsViewModel.quickAdjustPresets.collectAsState()
-    val timerPresets by settingsViewModel.timerPresets.collectAsState()
 
     // --- STATE ---
-    var showTimerDialog by remember { mutableStateOf(false) }
     var editingAlarm by remember { mutableStateOf<AlarmItem?>(null) }
     var isCreatingNew by remember { mutableStateOf(false) }
     var showDatePickerForAlarm by remember { mutableStateOf<AlarmItem?>(null) }
     var showDatePickerForGroup by remember { mutableStateOf<AlarmGroup?>(null) }
-    var isFabExpanded by remember { mutableStateOf(false) }
+
+    // FAB Trigger Handling
+    LaunchedEffect(triggerCreateAlarm) {
+        if (triggerCreateAlarm) {
+            val now = Calendar.getInstance()
+            editingAlarm = settingsViewModel.createDefaultAlarm(
+                now.get(Calendar.HOUR_OF_DAY),
+                now.get(Calendar.MINUTE)
+            )
+            isCreatingNew = true
+            onAlarmDialogDismiss()
+        }
+    }
 
     // Group Dialogs
     var groupToEdit by remember { mutableStateOf<AlarmGroup?>(null) }
@@ -309,144 +486,20 @@ fun Dashboard(viewModel: DashboardViewModel = viewModel(), settingsViewModel: Se
                 } ?: Long.MAX_VALUE // Groups with no enabled alarms go last
         }
 
-    Scaffold(
-        floatingActionButtonPosition = FabPosition.Center,
-        floatingActionButton = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-                    .padding(bottom = 16.dp)
-            ) {
-                // Left: Settings (Bouncy FAB)
-                val settingsIS = remember { MutableInteractionSource() }
-                FloatingActionButton(
-                    onClick = onSettingsClick,
-                    interactionSource = settingsIS,
-                    shape = MaterialTheme.shapes.large,
-                    modifier = Modifier.align(Alignment.BottomStart).bounce(settingsIS)
-                ) {
-                    Icon(androidx.compose.material.icons.Icons.Default.Settings, contentDescription = stringResource(R.string.title_settings))
-                }
+    // Trigger for FAB from MainContent (We'll use a local state for now and handle it in Scaffold in next step)
+    // Actually, I'll move the FAB back into AlarmScreen for now, OR pass a lambda.
+    // The request says "only the fab on the bottom right".
 
-                // Right: Expandable Action
-                Column(
-                    horizontalAlignment = Alignment.End,
-                    modifier = Modifier.align(Alignment.BottomEnd)
-                ) {
-                    AnimatedVisibility(
-                        visible = isFabExpanded,
-                        enter = fadeIn(animationSpec = effectsSpring()) + 
-                               expandVertically(animationSpec = effectsSpring()),
-                        exit = fadeOut(animationSpec = effectsSpring()) + 
-                              shrinkVertically(animationSpec = effectsSpring())
-                    ) {
-                        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                            val timerIS = remember { MutableInteractionSource() }
-                            ExtendedFloatingActionButton(
-                                onClick = {
-                                    showTimerDialog = true
-                                    isFabExpanded = false
-                                },
-                                interactionSource = timerIS,
-                                shape = MaterialTheme.shapes.large,
-                                text = { Text(stringResource(R.string.action_add_timer), style = MaterialTheme.typography.labelLarge) },
-                                icon = { Icon(androidx.compose.material.icons.Icons.Default.Timer, null) },
-                                modifier = Modifier.width(160.dp).bounce(timerIS)
-                            )
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Spacer(modifier = Modifier.height(16.dp))
 
-                            val alarmIS = remember { MutableInteractionSource() }
-                            ExtendedFloatingActionButton(
-                                onClick = {
-                                    val now = Calendar.getInstance()
-                                    editingAlarm = settingsViewModel.createDefaultAlarm(
-                                        now.get(Calendar.HOUR_OF_DAY),
-                                        now.get(Calendar.MINUTE)
-                                    )
-                                    isCreatingNew = true
-                                    isFabExpanded = false
-                                },
-                                interactionSource = alarmIS,
-                                shape = MaterialTheme.shapes.large,
-                                text = { Text(stringResource(R.string.action_add_alarm), style = MaterialTheme.typography.labelLarge) },
-                                icon = { Icon(androidx.compose.material.icons.Icons.Default.Alarm, null) },
-                                modifier = Modifier.width(160.dp).bounce(alarmIS)
-                            )
-                            Spacer(Modifier.height(8.dp))
-                        }
-                    }
-
-                    val mainFabIS = remember { MutableInteractionSource() }
-                    LargeFloatingActionButton(
-                        onClick = { isFabExpanded = !isFabExpanded },
-                        interactionSource = mainFabIS,
-                        shape = MaterialTheme.shapes.extraLarge,
-                        containerColor = if (isFabExpanded) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.bounce(mainFabIS)
-                    ) {
-                        Icon(
-                            if (isFabExpanded) androidx.compose.material.icons.Icons.Default.Close else androidx.compose.material.icons.Icons.Default.Add,
-                            contentDescription = stringResource(if (isFabExpanded) R.string.desc_close else R.string.desc_expand),
-                            modifier = Modifier.size(36.dp)
-                        )
-                    }
-                }
-            }
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .padding(paddingValues)
-                .fillMaxSize()
-                .padding(horizontal = 16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // --- ACTIVE TIMERS ---
-            if (viewModel.activeTimers.isNotEmpty()) {
-                Text(
-                    stringResource(R.string.section_active_timers),
-                    style = MaterialTheme.typography.labelLarge,
-                    modifier = Modifier.align(Alignment.Start).padding(vertical = 8.dp)
-                )
-                viewModel.activeTimers.forEach { timer ->
-                    val currentTime by viewModel.currentTime.collectAsStateWithLifecycle()
-                    val diff = timer.endTime - currentTime
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp)
-                            .clickable {
-                                val intent = Intent(context, RingActivity::class.java).apply {
-                                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                                    putExtra("ALARM_TYPE", "TIMER")
-                                    putExtra("ALARM_ID", timer.id)
-                                    putExtra("START_TIME", timer.endTime - timer.totalDuration)
-                                    setData(android.net.Uri.parse("custom://timer/${timer.id}"))
-                                }
-                                context.startActivity(intent)
-                            },
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0))
-                    ) {
-                        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(if(diff>0) AlarmUtils.formatDuration(context, (diff/1000).toInt()) else stringResource(R.string.timer_ringing), style = MaterialTheme.typography.headlineSmall, color = Color(0xFFE65100))
-                            Spacer(Modifier.weight(1f))
-                            Button(onClick = { viewModel.stopTimer(timer.id) }) { Text(stringResource(R.string.action_stop)) }
-                        }
-                    }
-                }
-            } else {
-                OutlinedButton(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = { showTimerDialog = true }
-                ) { Text(stringResource(R.string.action_new_timer)) }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // --- MAIN LIST ---
-            LazyColumn(modifier = Modifier.weight(1f)) {
+        // --- MAIN LIST ---
+        LazyColumn(modifier = Modifier.weight(1f)) {
 
                 // 1. UNGROUPED ALARMS
                 if (flatAlarms.isNotEmpty()) {
@@ -574,13 +627,10 @@ fun Dashboard(viewModel: DashboardViewModel = viewModel(), settingsViewModel: Se
                 }
 
                 item { Spacer(Modifier.height(80.dp)) }
-            }
         }
     }
 
     // --- DIALOGS ---
-
-    // 1. Edit Alarm & Create Group Logic
     if (editingAlarm != null) {
         EditAlarmDialog(
             alarm = editingAlarm!!,
@@ -688,9 +738,6 @@ fun Dashboard(viewModel: DashboardViewModel = viewModel(), settingsViewModel: Se
         )
     }
 
-    if (showTimerDialog) {
-        EditTimerDialog(timerPresets = timerPresets, onDismiss = { showTimerDialog = false }, onConfirm = { viewModel.startTimer(it); showTimerDialog = false })
-    }
     if (showDatePickerForAlarm != null) {
         val datePickerState = rememberDatePickerState()
         DatePickerDialog(

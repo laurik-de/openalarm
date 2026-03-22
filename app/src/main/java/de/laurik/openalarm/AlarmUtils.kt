@@ -214,4 +214,20 @@ object AlarmUtils {
         return if (m == 0) context.getString(R.string.fmt_duration_h, h) 
                else "${context.getString(R.string.fmt_duration_h, h)} ${context.getString(R.string.fmt_duration_m, m)}"
     }
+
+    fun formatTimerTime(millis: Long): String {
+        val seconds = millis / 1000
+        val h = seconds / 3600
+        val m = (seconds % 3600) / 60
+        val s = seconds % 60
+        
+        return when {
+            h > 0 -> String.format(java.util.Locale.getDefault(), "%d:%02d:%02d", h, m, s)
+            m > 0 -> String.format(java.util.Locale.getDefault(), "%02d:%02d", m, s)
+            else -> {
+                val ss = (millis % 1000) / 10
+                String.format(java.util.Locale.getDefault(), "%02d.%02d", s, ss)
+            }
+        }
+    }
 }
