@@ -120,6 +120,8 @@ data class TimerItem(
     val durationSeconds: Int,
     val endTime: Long,
     val totalDuration: Long,
+    val isPaused: Boolean = false,
+    val remainingMillis: Long = 0L
 )
 
 @Entity(tableName = "interrupted_items")

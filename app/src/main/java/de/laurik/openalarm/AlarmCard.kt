@@ -1,5 +1,7 @@
 package de.laurik.openalarm
 
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -7,10 +9,14 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.draw.scale
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AlarmOff
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import de.laurik.openalarm.ui.theme.bounce
+import de.laurik.openalarm.ui.theme.bounceClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -21,6 +27,9 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import java.time.format.DateTimeFormatter
 import java.time.LocalTime
+import de.laurik.openalarm.ui.theme.effectsSpring
+import de.laurik.openalarm.ui.theme.bounceClickable
+import de.laurik.openalarm.ui.theme.bounceCombinedClickable
 
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
@@ -104,49 +113,65 @@ fun AlarmCard(
 
     val repeatText = remember(alarm.daysOfWeek) { AlarmUtils.getRepeatText(context, alarm.daysOfWeek) }
 
+    // Hero Moment: Subtle pulse/scale for the next alarm
+    val scale by animateFloatAsState(
+        targetValue = if (isNextAlarm) 1.03f else 1f,
+        animationSpec = effectsSpring(),
+        label = "hero_scale"
+    )
+
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp, horizontal = 8.dp)
-            .combinedClickable(
+            .padding(vertical = 6.dp, horizontal = 12.dp)
+            .scale(scale)
+            .animateContentSize(animationSpec = effectsSpring<androidx.compose.ui.unit.IntSize>())
+            .bounceCombinedClickable(
                 onClick = onClick,
                 onLongClick = { showMenu = true }
             ),
+        shape = MaterialTheme.shapes.large, // Less round look as requested
         colors = CardDefaults.cardColors(
             containerColor = if (isNextAlarm || isSnoozed) MaterialTheme.colorScheme.primaryContainer 
             else if (alarm.isEnabled) MaterialTheme.colorScheme.surfaceContainerHigh 
             else MaterialTheme.colorScheme.surfaceContainer
         ),
-        elevation = CardDefaults.cardElevation(if (isNextAlarm || isSnoozed && alarm.isEnabled) 4.dp else if (alarm.isEnabled) 1.dp else 0.dp)
+        elevation = CardDefaults.cardElevation(if (isNextAlarm || isSnoozed && alarm.isEnabled) 6.dp else if (alarm.isEnabled) 2.dp else 0.dp)
     ) {
         Box {
-            Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(modifier = Modifier.fillMaxWidth().padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
 
                 // --- CLICKABLE TIME SECTION ---
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.clickable { if (alarm.isEnabled) showAdjustDialog = true }
+                    modifier = Modifier.bounceClickable { if (alarm.isEnabled) showAdjustDialog = true }
                 ) {
                     if (labelPrefix != null) {
                         Text(text = labelPrefix, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                     }
                     Text(
                         text = displayTimeBig,
-                        fontSize = 42.sp,
-                        fontWeight = FontWeight.Light,
+                        style = MaterialTheme.typography.displayMedium,
                         color = if (alarm.isEnabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     if (displayTimeSmall != null) {
-                        Text(text = displayTimeSmall, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold)
+                        Text(text = displayTimeSmall, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
 
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(20.dp))
 
                 // --- INFO SECTION ---
                 Column(modifier = Modifier.weight(1f)) {
                     if (alarm.label.isNotEmpty()) {
-                        Text(alarm.label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, color = if (alarm.isEnabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            alarm.label, 
+                            style = MaterialTheme.typography.titleLarge, 
+                            fontWeight = FontWeight.Bold, 
+                            maxLines = 1, 
+                            overflow = TextOverflow.Ellipsis, 
+                            color = if (alarm.isEnabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
 
                     if (repeatText != null) {
@@ -176,15 +201,24 @@ fun AlarmCard(
                     }
                 }
 
-                IconButton(onClick = { showMenu = true }) {
+                Box(modifier = Modifier.bounceClickable { showMenu = true }) {
                     Icon(
                         imageVector = Icons.Default.AlarmOff,
                         contentDescription = stringResource(R.string.menu_skip_next),
-                        tint = if (isEffectivelySkipped) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = if (isEffectivelySkipped) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(8.dp)
                     )
                 }
-
-                Switch(checked = alarm.isEnabled, onCheckedChange = onToggleGroup)
+                // Switch with bouncy effect
+                val switchIS = remember { MutableInteractionSource() }
+                Box(modifier = Modifier.bounceClickable(interactionSource = switchIS, onClick = { onToggleGroup(!alarm.isEnabled) })) {
+                    Switch(
+                        checked = alarm.isEnabled,
+                        onCheckedChange = onToggleGroup,
+                        interactionSource = switchIS,
+                        modifier = Modifier.scale(0.85f)
+                    )
+                }
             }
 
             // --- MENU ---

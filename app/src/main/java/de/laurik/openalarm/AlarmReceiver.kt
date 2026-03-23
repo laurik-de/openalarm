@@ -103,6 +103,16 @@ class AlarmReceiver : BroadcastReceiver() {
                 return
             }
 
+            // --- PAUSE/RESUME TIMER ---
+            if (receivedAction == "PAUSE_TIMER") {
+                handlePauseTimer(context, intent)
+                return
+            }
+            if (receivedAction == "RESUME_TIMER") {
+                handleResumeTimer(context, intent)
+                return
+            }
+
             // --- START RINGING (default action) ---
             handleStartRinging(context, intent, am)
         } catch (e: Exception) {
@@ -240,6 +250,28 @@ class AlarmReceiver : BroadcastReceiver() {
             }
         } catch (e: Exception) {
             logger.e(TAG, "Failed to start ringing service for ID: $id", e)
+        }
+    }
+
+    private fun handlePauseTimer(context: Context, intent: Intent) {
+        val id = intent.getIntExtra("TARGET_ID", -1)
+        if (id != -1) {
+            val timer = AlarmRepository.getTimer(id)
+            if (timer != null) {
+                AlarmRepository.pauseTimer(context, timer)
+                NotificationRenderer.refreshAll(context)
+            }
+        }
+    }
+
+    private fun handleResumeTimer(context: Context, intent: Intent) {
+        val id = intent.getIntExtra("TARGET_ID", -1)
+        if (id != -1) {
+            val timer = AlarmRepository.getTimer(id)
+            if (timer != null) {
+                AlarmRepository.resumeTimer(context, timer)
+                NotificationRenderer.refreshAll(context)
+            }
         }
     }
 }

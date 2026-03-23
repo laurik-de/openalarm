@@ -10,21 +10,34 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun SmartTimePickerLayout(
     hour: Int, minute: Int, seconds: Int? = null,
-    updateTrigger: Long = 0L, // NEW COMMAND KEY
+    updateTrigger: Long = 0L,
     snapImmediately: Boolean,
+    keyboardTrigger: Long = 0L,
     onTimeChange: (Int, Int, Int) -> Unit,
+    onDismiss: () -> Unit = {},
     content: @Composable (
         wheelContent: @Composable () -> Unit,
-        numpadContent: @Composable (() -> Unit)?
+        numpadContent: @Composable (() -> Unit)?,
+        onDismissRequest: () -> Unit
     ) -> Unit
 ) {
     var editingColumn by remember { mutableStateOf(TimeColumn.NONE) }
     var inputBuffer by remember { mutableStateOf("") }
     
-    BackHandler(enabled = editingColumn != TimeColumn.NONE) {
+    LaunchedEffect(keyboardTrigger) {
+        if (keyboardTrigger > 0) {
+            editingColumn = TimeColumn.MINUTE
+            inputBuffer = ""
+        }
+    }
+
+    val onDismissRequest = {
         editingColumn = TimeColumn.NONE
         inputBuffer = ""
+        onDismiss()
     }
+
+    BackHandler(enabled = editingColumn != TimeColumn.NONE, onBack = onDismissRequest)
 
     // Helper to find next column for auto-advance
     fun advanceColumn() {
@@ -123,5 +136,5 @@ fun SmartTimePickerLayout(
         }
     } else null
 
-    content(wheels, numpad)
+    content(wheels, numpad, onDismissRequest)
 }

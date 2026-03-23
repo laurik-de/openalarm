@@ -261,30 +261,33 @@ class AlarmScheduler(private val context: Context) {
         }
     }
 
-    /**
-     * Cancels a scheduled alarm.
-     *
-     * @param alarm The alarm to cancel
-     */
     fun cancel(alarm: AlarmItem) {
+        cancelById(alarm.id)
+    }
+
+    /**
+     * Cancels a scheduled alarm or timer by its ID.
+     *
+     * @param id The ID to cancel
+     */
+    fun cancelById(id: Int) {
         try {
-            logger.d(TAG, "Canceling alarm: ID=${alarm.id}")
+            logger.d(TAG, "Canceling alarm/timer: ID=$id")
 
             val intent = Intent(context, AlarmReceiver::class.java)
             val pendingIntent = PendingIntent.getBroadcast(
                 context,
-                alarm.id,
+                id,
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
             alarmManager.cancel(pendingIntent)
             pendingIntent.cancel()
 
-            // RE-CALCULATE NOTIFICATION: If the soonest alarm was just cancelled, we need a new trigger
+            // RE-CALCULATE NOTIFICATION
             scheduleNotificationUpdate()
         } catch (e: Exception) {
-            logger.e(TAG, "Failed to cancel alarm: ID=${alarm.id}", e)
-            // Optionally notify the user or take other action
+            logger.e(TAG, "Failed to cancel: ID=$id", e)
         }
     }
 

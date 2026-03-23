@@ -17,6 +17,10 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import de.laurik.openalarm.ui.theme.bounce
+import de.laurik.openalarm.ui.theme.bounceClickable
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -176,7 +180,8 @@ fun CustomRingtoneManagerDialog(
                             )
                         },
                         navigationIcon = {
-                            IconButton(onClick = onDismiss) {
+                            val navIS = remember { MutableInteractionSource() }
+                            IconButton(onClick = onDismiss, interactionSource = navIS, modifier = Modifier.bounce(navIS)) {
                                 Icon(Icons.Default.ArrowBack, stringResource(R.string.desc_back))
                             }
                         },
@@ -190,17 +195,21 @@ fun CustomRingtoneManagerDialog(
                             Modifier.fillMaxWidth().padding(16.dp),
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
+                            val addFileIS = remember { MutableInteractionSource() }
                             Button(
                                 onClick = { filePicker.launch(arrayOf("audio/*")) },
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f).bounce(addFileIS),
+                                interactionSource = addFileIS
                             ) {
                                 Icon(Icons.Default.Add, null)
                                 Spacer(Modifier.width(8.dp))
                                 Text(stringResource(R.string.action_add_file))
                             }
+                            val addFolderIS = remember { MutableInteractionSource() }
                             Button(
                                 onClick = { folderPicker.launch(null) },
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f).bounce(addFolderIS),
+                                interactionSource = addFolderIS
                             ) {
                                 Icon(Icons.Default.Add, null)
                                 Spacer(Modifier.width(8.dp))
@@ -290,7 +299,7 @@ fun RingtoneListItem(
     } else ""
     
     ListItem(
-        modifier = Modifier.clickable { onSelect() },
+        modifier = Modifier.bounceClickable(indication = LocalIndication.current) { onSelect() },
         headlineContent = { 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(rt.name, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, false))
@@ -313,7 +322,7 @@ fun RingtoneListItem(
                     // Loop through modes for folders
                     Text(
                         stringResource(R.string.action_change),
-                        modifier = Modifier.clickable {
+                        modifier = Modifier.bounceClickable(indication = LocalIndication.current) {
                             val next = if (rt.mode == CustomRingtoneSelectionMode.ROTATING) CustomRingtoneSelectionMode.RANDOM else CustomRingtoneSelectionMode.ROTATING
                             onUpdateMode(next)
                         },
@@ -327,14 +336,16 @@ fun RingtoneListItem(
         },
         trailingContent = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onPlayPreview) {
+                val previewIS = remember { MutableInteractionSource() }
+                IconButton(onClick = onPlayPreview, interactionSource = previewIS, modifier = Modifier.bounce(previewIS)) {
                     Icon(
                         if (isPlaying) Icons.Default.Stop else Icons.Default.PlayArrow,
                         contentDescription = stringResource(R.string.desc_preview),
                         tint = if (isPlaying) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                IconButton(onClick = onDelete) {
+                val deleteIS = remember { MutableInteractionSource() }
+                IconButton(onClick = onDelete, interactionSource = deleteIS, modifier = Modifier.bounce(deleteIS)) {
                     Icon(Icons.Default.Delete, stringResource(R.string.action_delete_ringtone), tint = MaterialTheme.colorScheme.error)
                 }
             }

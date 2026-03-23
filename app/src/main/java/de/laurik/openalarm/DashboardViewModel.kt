@@ -20,7 +20,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     val currentTime = flow {
         while (true) {
             emit(System.currentTimeMillis())
-            delay(1000)
+            // Fast 30ms updates for liquid smooth milliseconds, otherwise 1000ms
+            delay(if (activeTimers.isNotEmpty()) 30L else 1000L)
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), System.currentTimeMillis())
 
@@ -382,6 +383,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun stopTimer(timerId: Int) {
+        // Eagerly remove from memory to make stopping instantly responsive
+        AlarmRepository.removeTimer(context, timerId)
+
         // We use the Receiver intent to ensure clean shutdown (Notifications etc)
         val intent = android.content.Intent(context, AlarmReceiver::class.java).apply {
             action = "STOP_SPECIFIC_TIMER"
@@ -389,5 +393,13 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         }
         context.sendBroadcast(intent)
         NotificationRenderer.refreshAll(context)
+    }
+
+    fun pauseTimer(timer: TimerItem) {
+        AlarmRepository.pauseTimer(context, timer)
+    }
+
+    fun resumeTimer(timer: TimerItem) {
+        AlarmRepository.resumeTimer(context, timer)
     }
 }

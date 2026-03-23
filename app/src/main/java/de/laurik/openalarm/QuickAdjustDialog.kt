@@ -15,6 +15,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import de.laurik.openalarm.ui.theme.bounce
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -146,14 +148,26 @@ fun QuickAdjustDialog(
                         // Custom & Reset
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             if (hasActiveOverride) {
-                                TextButton(onClick = onReset, colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
+                                val resetIS = remember { MutableInteractionSource() }
+                                TextButton(
+                                    onClick = onReset,
+                                    modifier = Modifier.bounce(resetIS),
+                                    interactionSource = resetIS,
+                                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                                ) {
                                     Text(stringResource(R.string.action_reset))
                                 }
                             } else {
                                 Spacer(Modifier.width(8.dp))
                             }
                             
-                            FilledTonalButton(onClick = { isCustomMode = true }) {
+                            val customIS = remember { MutableInteractionSource() }
+                            FilledTonalButton(
+                                onClick = { isCustomMode = true },
+                                modifier = Modifier.bounce(customIS),
+                                interactionSource = customIS,
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
                                 Text(stringResource(R.string.action_custom_time))
                             }
                         }
@@ -200,10 +214,12 @@ fun QuickAdjustDialog(
 
 @Composable
 fun AdjustButton(text: String, onClick: () -> Unit) {
+    val interactionSource = remember { MutableInteractionSource() }
     OutlinedButton(
         onClick = onClick,
-        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
-        modifier = Modifier.width(80.dp) // Fixed width for alignment
+        modifier = Modifier.width(80.dp).bounce(interactionSource),
+        interactionSource = interactionSource,
+        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
     ) {
         Text(text, style = MaterialTheme.typography.labelMedium, maxLines = 1)
     }

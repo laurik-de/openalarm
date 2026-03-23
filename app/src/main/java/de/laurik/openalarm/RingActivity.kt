@@ -13,6 +13,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.*
 import androidx.compose.material.icons.Icons
@@ -285,8 +286,17 @@ fun TimerRingingScreen(startTime: Long, timerId: Int, onStop: () -> Unit, onAdd:
     val trueEndTime = timerItem?.endTime ?: startTime
     val context = LocalContext.current
     val durationText = remember(timerItem?.totalDuration, timerItem?.durationSeconds) {
-        val totalMs = timerItem?.totalDuration ?: (timerItem?.durationSeconds?.toLong()?.times(1000) ?: 0L)
-        AlarmUtils.formatDuration(context, (totalMs / 1000).toInt())
+        val baseDuration = timerItem?.durationSeconds ?: 0
+        val totalSeconds = ((timerItem?.totalDuration ?: 0L) / 1000).toInt()
+        val addedSeconds = totalSeconds - baseDuration
+        
+        if (addedSeconds > 0) {
+            val baseStr = AlarmUtils.formatDuration(context, baseDuration)
+            val addedStr = AlarmUtils.formatDuration(context, addedSeconds)
+            "$baseStr + $addedStr"
+        } else {
+            AlarmUtils.formatDuration(context, baseDuration)
+        }
     }
     var countUpStr by remember { mutableStateOf("+ 00:00") }
     var isRunning by remember(trueEndTime) { mutableStateOf(trueEndTime > System.currentTimeMillis()) }
@@ -299,20 +309,18 @@ fun TimerRingingScreen(startTime: Long, timerId: Int, onStop: () -> Unit, onAdd:
             isRunning = trueEndTime > now
             val diff = now - trueEndTime
             if (isRunning) {
-                // Running state: show remaining
+                // Running state: use precision formatter
                 val remaining = (trueEndTime - now).coerceAtLeast(0)
-                val totalSec = (remaining / 1000).toInt()
-                val m = totalSec / 60
-                val s = totalSec % 60
-                countUpStr = String.format(Locale.getDefault(), "%02d:%02d", m, s)
+                countUpStr = AlarmUtils.formatTimerTime(remaining)
             } else {
                 // Done state: count up from end time
                 val d = if (diff < 0) 0 else diff
                 val s = (d / 1000) % 60
                 val m = (d / (1000 * 60))
-                countUpStr = String.format(Locale.getDefault(), "+ %02d:%02d", m, s)
+                countUpStr = String.format(java.util.Locale.getDefault(), "+ %02d:%02d", m, s)
             }
-            delay(500)
+            // Faster update for sub-minute precision
+            delay(if (isRunning && (trueEndTime - System.currentTimeMillis()) < 60000) 50 else 500)
         }
     }
     Box(modifier = Modifier.fillMaxSize().background(bgColor)) {
@@ -323,7 +331,7 @@ fun TimerRingingScreen(startTime: Long, timerId: Int, onStop: () -> Unit, onAdd:
                 .padding(16.dp)
                 .statusBarsPadding()
         ) {
-            Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+            Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.desc_back), tint = Color.White)
         }
 
         Column(
@@ -336,26 +344,33 @@ fun TimerRingingScreen(startTime: Long, timerId: Int, onStop: () -> Unit, onAdd:
             Text(titleText, color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold)
             Text("($durationText)", color = Color.White.copy(alpha = 0.7f), fontSize = 20.sp)
             Spacer(Modifier.height(32.dp))
-            Text(countUpStr, color = Color.White, fontSize = 90.sp, fontWeight = FontWeight.Bold)
+            Text(
+                text = countUpStr,
+                color = Color.White,
+                fontSize = if (isRunning && (trueEndTime - System.currentTimeMillis()) < 60000) 100.sp else 90.sp,
+                fontWeight = FontWeight.Bold
+            )
             Spacer(Modifier.height(64.dp))
 
             Button(
                 onClick = onStop,
                 colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-                modifier = Modifier.fillMaxWidth().height(64.dp)
+                modifier = Modifier.fillMaxWidth().height(64.dp),
+                shape = MaterialTheme.shapes.large
             ) {
-                Text(stringResource(R.string.action_stop_caps), fontSize = 24.sp, color = Color.Red)
+                Text(stringResource(R.string.action_stop_caps), fontSize = 24.sp, color = Color.Red, fontWeight = FontWeight.Bold)
             }
             val settingsRepo = remember { SettingsRepository.getInstance(context) }
             val adjustPresets by settingsRepo.timerAdjustPresets.collectAsState(initial = listOf(60, 300))
 
-            Text(stringResource(R.string.label_add_time), color = Color.White)
+            Text(stringResource(R.string.label_add_time), color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
+            Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                 adjustPresets.forEach { seconds ->
                     OutlinedButton(
                         onClick = { onAdd(seconds) },
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White),
-                        modifier = Modifier.padding(horizontal = 4.dp)
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.5f)),
+                        modifier = Modifier.padding(horizontal = 4.dp).height(40.dp)
                     ) {
                         Text("+${seconds / 60}m", color = Color.White)
                     }
@@ -418,7 +433,7 @@ fun AlarmRingingScreen(
             if (alarm != null && alarm.currentSnoozeCount > 0) {
                 val maxStr = alarm.maxSnoozes?.let { "/ $it" } ?: ""
                 Text(
-                    text = "Snooze ${alarm.currentSnoozeCount} $maxStr",
+                    text = stringResource(R.string.label_snooze_count, alarm.currentSnoozeCount, maxStr),
                     color = Color.LightGray,
                     fontSize = 18.sp,
                     modifier = Modifier.padding(top = 8.dp)
@@ -468,7 +483,7 @@ fun AlarmRingingScreen(
 fun SnoozePickerOverlay(presets: List<Int>, onDismiss: () -> Unit, onSelect: (Int?) -> Unit) {
 
     Box(
-        Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.8f)).clickable { onDismiss() },
+        Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.8f)).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onDismiss() },
         contentAlignment = Alignment.Center
     ) {
         Card(
@@ -476,7 +491,7 @@ fun SnoozePickerOverlay(presets: List<Int>, onDismiss: () -> Unit, onSelect: (In
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
             Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Select Snooze", style = MaterialTheme.typography.headlineSmall)
+                Text(stringResource(R.string.label_select_snooze), style = MaterialTheme.typography.headlineSmall)
                 Spacer(Modifier.height(24.dp))
                 
                 presets.forEach { mins ->
@@ -484,7 +499,7 @@ fun SnoozePickerOverlay(presets: List<Int>, onDismiss: () -> Unit, onSelect: (In
                         onClick = { onSelect(mins) },
                         modifier = Modifier.fillMaxWidth().height(56.dp).padding(vertical = 4.dp)
                     ) {
-                        Text("$mins minutes")
+                        Text(stringResource(R.string.fmt_duration_m, mins))
                     }
                 }
                 
@@ -492,7 +507,7 @@ fun SnoozePickerOverlay(presets: List<Int>, onDismiss: () -> Unit, onSelect: (In
                     onClick = { onSelect(null) },
                     modifier = Modifier.fillMaxWidth().height(56.dp).padding(vertical = 4.dp)
                 ) {
-                    Text("Deafult Snooze")
+                    Text(stringResource(R.string.label_default_snooze_short))
                 }
             }
         }
