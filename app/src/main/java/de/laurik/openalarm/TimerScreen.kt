@@ -23,12 +23,13 @@ import de.laurik.openalarm.ui.theme.bounce
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.platform.LocalContext
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun TimerScreen(
     viewModel: DashboardViewModel,
     timerPresets: List<Int> = listOf(10, 15, 30),
     triggerStartTimer: Long = 0L,
-    onNumpadChange: ((@Composable () -> Unit)?) -> Unit
+    onNumpadChange: (( @Composable () -> Unit )?) -> Unit
 ) {
     var hour by remember { mutableIntStateOf(0) }
     var minute by remember { mutableIntStateOf(15) }
@@ -36,6 +37,13 @@ fun TimerScreen(
     var snapNext by remember { mutableStateOf(true) }
     var updateTrigger by remember { mutableLongStateOf(0L) }
     var keyboardTrigger by remember { mutableLongStateOf(0L) }
+    
+    // When timer starts, reset keyboard trigger to avoid opening numpad when it stops
+    LaunchedEffect(viewModel.activeTimers.isNotEmpty()) {
+        if (viewModel.activeTimers.isNotEmpty()) {
+            keyboardTrigger = 0L
+        }
+    }
     
     val activeTimers = viewModel.activeTimers
     val currentTime by viewModel.currentTime.collectAsStateWithLifecycle()
@@ -48,73 +56,83 @@ fun TimerScreen(
         }
     }
 
-    AnimatedContent(
-        targetState = isRunning,
-        transitionSpec = {
-            if (targetState) {
-                // Setup → Running: fade + scale up
-                (fadeIn(tween(300)) + scaleIn(tween(300), initialScale = 0.92f))
-                    .togetherWith(fadeOut(tween(150)) + scaleOut(tween(150), targetScale = 0.95f))
+    SharedTransitionLayout {
+        AnimatedContent(
+            targetState = isRunning,
+            transitionSpec = {
+                if (targetState) {
+                    // Setup → Running: fade + scale up
+                    (fadeIn(tween(300)) + scaleIn(tween(300), initialScale = 0.92f))
+                        .togetherWith(fadeOut(tween(150)) + scaleOut(tween(150), targetScale = 0.95f))
+                } else {
+                    // Running → Setup: fade + scale down
+                    (fadeIn(tween(300)) + scaleIn(tween(300), initialScale = 1.05f))
+                        .togetherWith(fadeOut(tween(150)) + scaleOut(tween(150), targetScale = 1.05f))
+                }
+            },
+            label = "timer_state"
+        ) { running ->
+            if (!running) {
+                // TIMER SETUP VIEW
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp)
+                ) {
+                    TimerSetupView(
+                        hour = hour,
+                        minute = minute,
+                        second = second,
+                        updateTrigger = updateTrigger,
+                        snapNext = snapNext,
+                        keyboardTrigger = keyboardTrigger,
+                        timerPresets = timerPresets,
+                        onNumpadChange = onNumpadChange,
+                        sharedTransitionScope = this@SharedTransitionLayout,
+                        animatedContentScope = this@AnimatedContent,
+                        onTimeChange = { h, m, s ->
+                            hour = h
+                            minute = m
+                            second = s
+                            snapNext = true
+                            updateTrigger++
+                        },
+                        onOpenKeyboard = { keyboardTrigger++ },
+                        onStart = {
+                            val totalSec = (hour * 3600) + (minute * 60) + second
+                            if (totalSec > 0) viewModel.startTimer(totalSec)
+                        }
+                    )
+                }
             } else {
-                // Running → Setup: fade + scale down
-                (fadeIn(tween(300)) + scaleIn(tween(300), initialScale = 1.05f))
-                    .togetherWith(fadeOut(tween(150)) + scaleOut(tween(150), targetScale = 1.05f))
-            }
-        },
-        label = "timer_state"
-    ) { running ->
-        if (!running) {
-            // TIMER SETUP VIEW
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp)
-            ) {
-                TimerSetupView(
-                    hour = hour,
-                    minute = minute,
-                    second = second,
-                    updateTrigger = updateTrigger,
-                    snapNext = snapNext,
-                    keyboardTrigger = keyboardTrigger,
-                    timerPresets = timerPresets,
-                    onNumpadChange = onNumpadChange,
-                    onTimeChange = { h, m, s ->
-                        hour = h
-                        minute = m
-                        second = s
-                        snapNext = true
-                        updateTrigger++
-                    },
-                    onOpenKeyboard = { keyboardTrigger++ },
-                    onStart = {
-                        val totalSec = (hour * 3600) + (minute * 60) + second
-                        if (totalSec > 0) viewModel.startTimer(totalSec)
-                    }
-                )
-            }
-        } else {
-            // TIMER RUNNING VIEW
-            val currentTimer = activeTimers.firstOrNull()
-            var lastTimer by remember { mutableStateOf<TimerItem?>(null) }
-            
-            if (currentTimer != null) {
-                lastTimer = currentTimer
-            }
-            
-            lastTimer?.let { t ->
-                TimerRunningView(
-                    timer = t,
-                    currentTime = currentTime,
-                    onStop = { viewModel.stopTimer(t.id) },
-                    onPause = { viewModel.pauseTimer(t) },
-                    onResume = { viewModel.resumeTimer(t) }
-                )
+                // TIMER RUNNING VIEW
+                val currentTimer = activeTimers.firstOrNull()
+                var lastTimer by remember { mutableStateOf<TimerItem?>(null) }
+                
+                if (currentTimer != null) {
+                    lastTimer = currentTimer
+                }
+                
+                lastTimer?.let { t ->
+                    TimerRunningView(
+                        timer = t,
+                        currentTime = currentTime,
+                        sharedTransitionScope = this@SharedTransitionLayout,
+                        animatedContentScope = this@AnimatedContent,
+                        onStop = { 
+                            keyboardTrigger = 0L // Reset trigger on manual stop too
+                            viewModel.stopTimer(t.id) 
+                        },
+                        onPause = { viewModel.pauseTimer(t) },
+                        onResume = { viewModel.resumeTimer(t) }
+                    )
+                }
             }
         }
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun TimerSetupView(
     hour: Int,
@@ -125,6 +143,8 @@ fun TimerSetupView(
     keyboardTrigger: Long,
     timerPresets: List<Int>,
     onNumpadChange: (( @Composable () -> Unit )?) -> Unit,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedContentScope: AnimatedContentScope,
     onTimeChange: (Int, Int, Int) -> Unit,
     onOpenKeyboard: () -> Unit,
     onStart: () -> Unit
@@ -162,8 +182,16 @@ fun TimerSetupView(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    Box(modifier = Modifier.offset(y = (-40).dp)) {
-                        wheelContent()
+                    with(sharedTransitionScope) {
+                        Box(modifier = Modifier
+                            .offset(y = (-40).dp)
+                            .sharedElement(
+                                rememberSharedContentState(key = "timer_display"),
+                                animatedVisibilityScope = animatedContentScope
+                            )
+                        ) {
+                            wheelContent()
+                        }
                     }
 
                     Spacer(Modifier.height(24.dp))
@@ -187,7 +215,7 @@ fun TimerSetupView(
                 // BOTTOM CONTENT (Presets + Start button)
                 Column(
                     modifier = Modifier
-                        .padding(bottom = 16.dp)
+                        .padding(bottom = 56.dp)
                         .fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -198,16 +226,22 @@ fun TimerSetupView(
                             .padding(horizontal = 16.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
                     ) {
-                        timerPresets.forEach { mins ->
+                        timerPresets.forEachIndexed { index, mins ->
                             val presetIS = remember { MutableInteractionSource() }
-                            OutlinedButton(
-                                onClick = { onTimeChange(mins / 60, mins % 60, 0) },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .bounce(presetIS),
-                                interactionSource = presetIS
-                            ) {
-                                Text("${mins}m")
+                            with(sharedTransitionScope) {
+                                OutlinedButton(
+                                    onClick = { onTimeChange(mins / 60, mins % 60, 0) },
+                                    modifier = Modifier
+                                        .sharedBounds(
+                                            rememberSharedContentState(key = "preset_$index"),
+                                            animatedVisibilityScope = animatedContentScope
+                                        )
+                                        .weight(1f)
+                                        .bounce(presetIS),
+                                    interactionSource = presetIS
+                                ) {
+                                    Text("${mins}m")
+                                }
                             }
                         }
                     }
@@ -216,21 +250,27 @@ fun TimerSetupView(
 
                     // Huge Start Button
                     val startIS = remember { MutableInteractionSource() }
-                    Button(
-                        onClick = onStart,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(80.dp)
-                            .padding(horizontal = 16.dp)
-                            .bounce(startIS),
-                        interactionSource = startIS,
-                        shape = MaterialTheme.shapes.extraLarge,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
-                        )
-                    ) {
-                        Text(stringResource(R.string.action_start).uppercase(), fontSize = 28.sp, fontWeight = FontWeight.Bold)
+                    with(sharedTransitionScope) {
+                        Button(
+                            onClick = onStart,
+                            modifier = Modifier
+                                .sharedBounds(
+                                    rememberSharedContentState(key = "action_buttons"),
+                                    animatedVisibilityScope = animatedContentScope
+                                )
+                                .fillMaxWidth()
+                                .height(80.dp)
+                                .padding(horizontal = 16.dp)
+                                .bounce(startIS),
+                            interactionSource = startIS,
+                            shape = MaterialTheme.shapes.extraLarge,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            )
+                        ) {
+                            Text(stringResource(R.string.action_start).uppercase(), fontSize = 28.sp, fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             }
@@ -238,10 +278,13 @@ fun TimerSetupView(
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun TimerRunningView(
     timer: TimerItem,
     currentTime: Long,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedContentScope: AnimatedContentScope,
     onStop: () -> Unit,
     onPause: () -> Unit,
     onResume: () -> Unit
@@ -274,117 +317,148 @@ fun TimerRunningView(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .padding(top = 16.dp, start = 16.dp, end = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(titleText, color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold)
-            val baseDuration = timer.durationSeconds
-            val totalSeconds = (timer.totalDuration / 1000).toInt()
-            val addedSeconds = totalSeconds - baseDuration
-            
-            val durationText = if (addedSeconds > 0) {
-                val baseStr = AlarmUtils.formatDuration(context, baseDuration)
-                val addedStr = AlarmUtils.formatDuration(context, addedSeconds)
-                "($baseStr + $addedStr)"
-            } else {
-                "(${AlarmUtils.formatDuration(context, baseDuration)})"
-            }
-            Text(durationText, color = Color.White.copy(alpha = 0.7f), fontSize = 20.sp)
-
-            Spacer(Modifier.height(32.dp))
-
-            // BIG TIME — animated size change at < 60s
-            Text(
-                text = timeStr,
-                color = Color.White,
-                fontSize = if (diff in 1..59999) 100.sp else 90.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            if (isPaused) {
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    stringResource(R.string.action_pause).uppercase(),
-                    color = Color.White.copy(alpha = 0.8f),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
-                )
-            }
-
-            Spacer(Modifier.height(64.dp))
-
-            // ACTION ROW
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)
+            // CENTERED CONTENT
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
-                // Pause/Resume Button
-                val pauseIS = remember { MutableInteractionSource() }
-                val pauseIcon = if (isPaused) Icons.Default.PlayArrow else Icons.Default.Pause
-                val pauseAction = if (isPaused) onResume else onPause
+                with(sharedTransitionScope) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.sharedElement(
+                            rememberSharedContentState(key = "timer_display"),
+                            animatedVisibilityScope = animatedContentScope
+                        )
+                    ) {
+                        Text(titleText, color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold)
+                        val baseDuration = timer.durationSeconds
+                        val totalSeconds = (timer.totalDuration / 1000).toInt()
+                        val addedSeconds = totalSeconds - baseDuration
+                        
+                        val durationText = if (addedSeconds > 0) {
+                            val baseStr = AlarmUtils.formatDuration(context, baseDuration)
+                            val addedStr = AlarmUtils.formatDuration(context, addedSeconds)
+                            "($baseStr + $addedStr)"
+                        } else {
+                            "(${AlarmUtils.formatDuration(context, baseDuration)})"
+                        }
+                        Text(durationText, color = Color.White.copy(alpha = 0.7f), fontSize = 20.sp)
 
-                Button(
-                    onClick = pauseAction,
-                    modifier = Modifier.weight(1f).height(64.dp).bounce(pauseIS),
-                    interactionSource = pauseIS,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.2f)),
-                    shape = MaterialTheme.shapes.large
-                ) {
-                    Icon(pauseIcon, contentDescription = null, modifier = Modifier.size(32.dp), tint = Color.White)
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        if (isPaused) stringResource(R.string.action_resume) else stringResource(R.string.action_pause),
-                        color = Color.White,
-                        fontSize = 18.sp
-                    )
-                }
+                        Spacer(Modifier.height(32.dp))
 
-                // Stop Button
-                val stopIS = remember { MutableInteractionSource() }
-                Button(
-                    onClick = onStop,
-                    modifier = Modifier.weight(1f).height(64.dp).bounce(stopIS),
-                    interactionSource = stopIS,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-                    shape = MaterialTheme.shapes.large
-                ) {
-                    Icon(Icons.Default.Stop, contentDescription = null, modifier = Modifier.size(32.dp), tint = Color.Red)
-                    Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.action_stop_caps), color = Color.Red, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        // BIG TIME — animated size change at < 60s
+                        Text(
+                            text = timeStr,
+                            color = Color.White,
+                            fontSize = if (diff in 1..59999) 100.sp else 90.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
 
-            Spacer(Modifier.height(32.dp))
+            // BOTTOM CONTENT (Presets + Action Row)
+            Column(
+                modifier = Modifier
+                    .padding(bottom = 56.dp)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // ADD TIME PRESETS
+                val settingsRepo = remember { SettingsRepository.getInstance(context) }
+                val adjustPresets by settingsRepo.timerAdjustPresets.collectAsState(initial = listOf(60, 300))
 
-            // ADD TIME PRESETS
-            val settingsRepo = remember { SettingsRepository.getInstance(context) }
-            val adjustPresets by settingsRepo.timerAdjustPresets.collectAsState(initial = listOf(60, 300))
-
-            Text(stringResource(R.string.label_add_time), color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
-            Spacer(Modifier.height(8.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                adjustPresets.forEach { seconds ->
-                    val addIS = remember { MutableInteractionSource() }
-                    OutlinedButton(
-                        onClick = {
-                            val addedMillis = seconds * 1000L
-                            val updated = timer.copy(
-                                endTime = timer.endTime + addedMillis,
-                                remainingMillis = timer.remainingMillis + addedMillis,
-                                totalDuration = timer.totalDuration + addedMillis,
-                                isPaused = false
-                            )
-                            AlarmRepository.updateTimer(context, updated)
-                            if (!isPaused) {
-                                AlarmScheduler(context).scheduleExact(updated.endTime, updated.id, "TIMER")
+                Text(stringResource(R.string.label_add_time), color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
+                Spacer(Modifier.height(8.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                    adjustPresets.forEachIndexed { index, seconds ->
+                        val addIS = remember { MutableInteractionSource() }
+                        with(sharedTransitionScope) {
+                            OutlinedButton(
+                                onClick = {
+                                    val addedMillis = seconds * 1000L
+                                    val updated = timer.copy(
+                                        endTime = timer.endTime + addedMillis,
+                                        remainingMillis = timer.remainingMillis + addedMillis,
+                                        totalDuration = timer.totalDuration + addedMillis,
+                                        isPaused = false
+                                    )
+                                    AlarmRepository.updateTimer(context, updated)
+                                    if (!isPaused) {
+                                        AlarmScheduler(context).scheduleExact(updated.endTime, updated.id, "TIMER")
+                                    }
+                                },
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.5f)),
+                                modifier = Modifier
+                                    .sharedBounds(
+                                        rememberSharedContentState(key = "preset_$index"),
+                                        animatedVisibilityScope = animatedContentScope
+                                    )
+                                    .padding(horizontal = 4.dp)
+                                    .height(40.dp)
+                                    .bounce(addIS),
+                                interactionSource = addIS
+                            ) {
+                                Text("+${seconds / 60}m", color = Color.White)
                             }
-                        },
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.5f)),
-                        modifier = Modifier.padding(horizontal = 4.dp).height(40.dp).bounce(addIS),
-                        interactionSource = addIS
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                // ACTION ROW
+                with(sharedTransitionScope) {
+                    Row(
+                        modifier = Modifier
+                            .sharedBounds(
+                                rememberSharedContentState(key = "action_buttons"),
+                                animatedVisibilityScope = animatedContentScope
+                            )
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)
                     ) {
-                        Text("+${seconds / 60}m", color = Color.White)
+                        // Pause/Resume Button
+                        val pauseIS = remember { MutableInteractionSource() }
+                        val pauseIcon = if (isPaused) Icons.Default.PlayArrow else Icons.Default.Pause
+                        val pauseAction = if (isPaused) onResume else onPause
+
+                        Button(
+                            onClick = pauseAction,
+                            modifier = Modifier.weight(1f).height(80.dp).bounce(pauseIS),
+                            interactionSource = pauseIS,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.2f)),
+                            shape = MaterialTheme.shapes.extraLarge
+                        ) {
+                            Icon(pauseIcon, contentDescription = null, modifier = Modifier.size(32.dp), tint = Color.White)
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                if (isPaused) stringResource(R.string.action_resume) else stringResource(R.string.action_pause),
+                                color = Color.White,
+                                fontSize = 18.sp
+                            )
+                        }
+
+                        // Stop Button
+                        val stopIS = remember { MutableInteractionSource() }
+                        Button(
+                            onClick = onStop,
+                            modifier = Modifier.weight(1f).height(80.dp).bounce(stopIS),
+                            interactionSource = stopIS,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+                            shape = MaterialTheme.shapes.extraLarge
+                        ) {
+                            Icon(Icons.Default.Stop, contentDescription = null, modifier = Modifier.size(32.dp), tint = Color.Red)
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.action_stop), color = Color.Red, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             }
