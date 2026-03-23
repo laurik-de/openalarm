@@ -8,11 +8,11 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 // 1. TYPE CONVERTERS (To save Lists and Enums)
 class Converters {
     @TypeConverter
-    fun fromDaysList(days: List<Int>): String = days.joinToString(",")
+    fun fromIntListNullable(list: List<Int>?): String? = list?.joinToString(",")
 
     @TypeConverter
-    fun toDaysList(data: String): List<Int> {
-        if (data.isEmpty()) return emptyList()
+    fun toIntListNullable(data: String?): List<Int>? {
+        if (data == null || data.isEmpty()) return null
         return data.split(",").mapNotNull { it.toIntOrNull() }
     }
 
@@ -172,10 +172,7 @@ abstract class AppDatabase : RoomDatabase() {
 
         private val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                // Add the new column as nullable
-                db.execSQL(
-                    "ALTER TABLE alarms ADD COLUMN ttsText TEXT"
-                )
+                addColumnIfNotExists(db, "alarms", "ttsText", "TEXT")
             }
         }
 
@@ -184,20 +181,52 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL(
                     "CREATE TABLE IF NOT EXISTS `custom_ringtones` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `uri` TEXT NOT NULL, `mode` TEXT NOT NULL, PRIMARY KEY(`id`))"
                 )
-                db.execSQL(
-                    "ALTER TABLE alarms ADD COLUMN ringtoneRotationIndex INTEGER NOT NULL DEFAULT 0"
-                )
+                addColumnIfNotExists(db, "alarms", "ringtoneRotationIndex", "INTEGER NOT NULL DEFAULT 0")
+                addColumnIfNotExists(db, "alarm_groups", "skippedUntil", "INTEGER NOT NULL DEFAULT 0")
+                addColumnIfNotExists(db, "alarm_groups", "colorArgb", "INTEGER NOT NULL DEFAULT -1")
             }
         }
 
         private val MIGRATION_3_4 = object : Migration(3, 4) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL(
-                    "ALTER TABLE alarms ADD COLUMN hurdleEnabled INTEGER NOT NULL DEFAULT 0"
-                )
-                db.execSQL(
-                    "ALTER TABLE alarms ADD COLUMN selectedHurdles TEXT NOT NULL DEFAULT ''"
-                )
+                // Hurdles
+                addColumnIfNotExists(db, "alarms", "hurdleEnabled", "INTEGER NOT NULL DEFAULT 0")
+                addColumnIfNotExists(db, "alarms", "selectedHurdles", "TEXT NOT NULL DEFAULT ''")
+                
+                // Snooze Settings
+                addColumnIfNotExists(db, "alarms", "isSnoozeEnabled", "INTEGER NOT NULL DEFAULT 1")
+                addColumnIfNotExists(db, "alarms", "directSnooze", "INTEGER NOT NULL DEFAULT 0")
+                addColumnIfNotExists(db, "alarms", "maxSnoozes", "INTEGER")
+                addColumnIfNotExists(db, "alarms", "currentSnoozeCount", "INTEGER NOT NULL DEFAULT 0")
+                
+                // Ringing Screen Revamp
+                addColumnIfNotExists(db, "alarms", "ringingScreenMode", "TEXT NOT NULL DEFAULT 'DEFAULT'")
+                addColumnIfNotExists(db, "alarms", "backgroundType", "TEXT NOT NULL DEFAULT 'COLOR'")
+                addColumnIfNotExists(db, "alarms", "backgroundValue", "TEXT NOT NULL DEFAULT '0xFF000000'")
+                addColumnIfNotExists(db, "alarms", "snoozePresets", "TEXT")
+                
+                // Timers (NEW fields for 0.3.0)
+                addColumnIfNotExists(db, "timers", "isPaused", "INTEGER NOT NULL DEFAULT 0")
+                addColumnIfNotExists(db, "timers", "remainingMillis", "INTEGER NOT NULL DEFAULT 0")
+                
+                // Interrupted Items (Safety for new field)
+                addColumnIfNotExists(db, "interrupted_items", "label", "TEXT NOT NULL DEFAULT ''")
+            }
+        }
+
+        private fun addColumnIfNotExists(db: SupportSQLiteDatabase, tableName: String, columnName: String, columnDefinition: String) {
+            val cursor = db.query("PRAGMA table_info($tableName)")
+            var exists = false
+            while (cursor.moveToNext()) {
+                val name = cursor.getString(1) // Column name is at index 1
+                if (name == columnName) {
+                    exists = true
+                    break
+                }
+            }
+            cursor.close()
+            if (!exists) {
+                db.execSQL("ALTER TABLE $tableName ADD COLUMN $columnName $columnDefinition")
             }
         }
     }
