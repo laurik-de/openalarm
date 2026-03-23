@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Indication
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -54,6 +55,7 @@ fun Modifier.bounce(interactionSource: InteractionSource): Modifier {
 @Composable
 fun Modifier.bounceClickable(
     interactionSource: MutableInteractionSource? = null,
+    indication: Indication? = null,
     enabled: Boolean = true,
     onClick: () -> Unit
 ): Modifier {
@@ -61,7 +63,7 @@ fun Modifier.bounceClickable(
     return this.bounce(actualIS)
         .clickable(
             interactionSource = actualIS,
-            indication = LocalIndication.current,
+            indication = indication,
             enabled = enabled,
             onClick = onClick
         )
@@ -74,6 +76,7 @@ fun Modifier.bounceClickable(
 @Composable
 fun Modifier.bounceCombinedClickable(
     interactionSource: MutableInteractionSource? = null,
+    indication: Indication? = null,
     enabled: Boolean = true,
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null
@@ -82,7 +85,7 @@ fun Modifier.bounceCombinedClickable(
     return this.bounce(actualIS)
         .combinedClickable(
             interactionSource = actualIS,
-            indication = LocalIndication.current,
+            indication = indication,
             enabled = enabled,
             onClick = onClick,
             onLongClick = onLongClick

@@ -7,6 +7,7 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
@@ -41,6 +42,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewModelScope
 import com.mikepenz.aboutlibraries.ui.compose.android.produceLibraries
 import com.mikepenz.aboutlibraries.ui.compose.m3.LibrariesContainer
+import de.laurik.openalarm.ui.theme.bounceClickable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -129,7 +131,7 @@ fun SettingsScreen(
                                 )
                             })
                         },
-                        modifier = Modifier.clickable { showAdjustEdit = true }
+                        modifier = Modifier.bounceClickable(indication = LocalIndication.current) { showAdjustEdit = true }
                     )
 
                     ListItem(
@@ -142,7 +144,7 @@ fun SettingsScreen(
                                 )
                             })
                         },
-                        modifier = Modifier.clickable { showTimerEdit = true }
+                        modifier = Modifier.bounceClickable(indication = LocalIndication.current) { showTimerEdit = true }
                     )
 
                     HorizontalDivider(Modifier.padding(vertical = 16.dp))
@@ -180,7 +182,7 @@ fun SettingsScreen(
                                     )
                                 )
                             },
-                            modifier = Modifier.clickable { showNotifyBeforeDialog = true }
+                            modifier = Modifier.bounceClickable(indication = LocalIndication.current) { showNotifyBeforeDialog = true }
                         )
                     }
 
@@ -195,7 +197,7 @@ fun SettingsScreen(
                             }
                             Text(txt)
                         },
-                        modifier = Modifier.clickable {
+                        modifier = Modifier.bounceClickable(indication = LocalIndication.current) {
                             val next =
                                 if (ringingMode == RingingScreenMode.CLEAN) RingingScreenMode.EASY else RingingScreenMode.CLEAN
                             viewModel.setDefaultRingingMode(next)
@@ -205,7 +207,7 @@ fun SettingsScreen(
                     ListItem(
                         headlineContent = { Text(stringResource(R.string.title_default_alarm_settings)) },
                         supportingContent = { Text(stringResource(R.string.desc_default_alarm_settings)) },
-                        modifier = Modifier.clickable { currentSubScreen = "DEFAULT_ALARM" }
+                        modifier = Modifier.bounceClickable(indication = LocalIndication.current) { currentSubScreen = "DEFAULT_ALARM" }
                     )
 
                     HorizontalDivider(Modifier.padding(vertical = 16.dp))
@@ -229,7 +231,7 @@ fun SettingsScreen(
                     ListItem(
                         headlineContent = { Text(stringResource(R.string.label_timer_ringtone)) },
                         supportingContent = { Text(ringtoneTitle) },
-                        modifier = Modifier.clickable {
+                        modifier = Modifier.bounceClickable(indication = LocalIndication.current) {
                             val i = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
                                 putExtra(
                                     RingtoneManager.EXTRA_RINGTONE_TYPE,
@@ -274,7 +276,7 @@ fun SettingsScreen(
                                 )
                             )
                         },
-                        modifier = Modifier.clickable { showTimerTimeoutDialog = true }
+                        modifier = Modifier.bounceClickable(indication = LocalIndication.current) { showTimerTimeoutDialog = true }
                     )
 
                     val timerAdjustPresets by viewModel.timerAdjustPresets.collectAsState()
@@ -282,7 +284,7 @@ fun SettingsScreen(
                     ListItem(
                         headlineContent = { Text(stringResource(R.string.label_timer_adjust_presets)) },
                         supportingContent = { Text(timerAdjustPresets.joinToString { "+${it / 60}m" }) },
-                        modifier = Modifier.clickable { showAdjustPresetsEdit = true }
+                        modifier = Modifier.bounceClickable(indication = LocalIndication.current) { showAdjustPresetsEdit = true }
                     )
 
                     // Volume
@@ -412,7 +414,7 @@ fun SettingsScreen(
                     ListItem(
                         headlineContent = { Text(stringResource(R.string.setting_view_logs)) },
                         supportingContent = { Text(stringResource(R.string.setting_view_logs_subtext)) },
-                        modifier = Modifier.clickable { currentSubScreen = "LOG_VIEWER" }
+                        modifier = Modifier.bounceClickable(indication = LocalIndication.current) { currentSubScreen = "LOG_VIEWER" }
                     )
 
                     HorizontalDivider(Modifier.padding(vertical = 16.dp))
@@ -463,7 +465,7 @@ fun SettingsScreen(
                     ListItem(
                         headlineContent = { Text(stringResource(R.string.setting_export)) },
                         supportingContent = { Text(stringResource(R.string.setting_export_subtext)) },
-                        modifier = Modifier.clickable {
+                        modifier = Modifier.bounceClickable(indication = LocalIndication.current) {
                             exportLauncher.launch("openalarm_backup_${System.currentTimeMillis()}.json")
                         }
                     )
@@ -471,7 +473,7 @@ fun SettingsScreen(
                     ListItem(
                         headlineContent = { Text(stringResource(R.string.setting_import)) },
                         supportingContent = { Text(stringResource(R.string.setting_import_subtext)) },
-                        modifier = Modifier.clickable {
+                        modifier = Modifier.bounceClickable(indication = LocalIndication.current) {
                             importLauncher.launch("application/json")
                         }
                     )
@@ -489,7 +491,7 @@ fun SettingsScreen(
                     ListItem(
                         headlineContent = { Text(stringResource(R.string.settings_headline_libraries)) },
                         supportingContent = { Text(stringResource(R.string.settings_supporting_libraries)) },
-                        modifier = Modifier.clickable {
+                        modifier = Modifier.bounceClickable(indication = LocalIndication.current) {
                             currentSubScreen = "OPEN_SOURCE_LIBRARIES"
                         }
                     )
@@ -497,7 +499,7 @@ fun SettingsScreen(
                     ListItem(
                         headlineContent = { Text(stringResource(R.string.settings_headline_license)) },
                         supportingContent = { Text(stringResource(R.string.settings_supporting_license)) },
-                        modifier = Modifier.clickable {
+                        modifier = Modifier.bounceClickable(indication = LocalIndication.current) {
                             currentSubScreen = "LICENSE"
                         } // TODO
 
@@ -724,7 +726,7 @@ fun ImportConfirmationDialog(
                 Spacer(Modifier.height(16.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.clickable { acknowledged = !acknowledged }
+                    modifier = Modifier.bounceClickable(indication = LocalIndication.current) { acknowledged = !acknowledged }
                 ) {
                     Checkbox(checked = acknowledged, onCheckedChange = { acknowledged = it })
                     Text(stringResource(R.string.label_understand_data_loss))

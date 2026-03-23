@@ -24,16 +24,27 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import de.laurik.openalarm.ui.theme.effectsSpring
 import de.laurik.openalarm.ui.theme.spatialSpring
-import de.laurik.openalarm.ui.theme.bounceClickable
-import de.laurik.openalarm.ui.theme.OpenAlarmTheme
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.ColorUtils
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.foundation.gestures.anchoredDraggable
+import androidx.compose.foundation.gestures.AnchoredDraggableState
+import androidx.compose.foundation.gestures.DraggableAnchors
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.animateTo
+import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.launch
+import androidx.compose.animation.rememberSplineBasedDecay
+import androidx.compose.ui.draw.*
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.*
+import androidx.compose.ui.graphics.RectangleShape
+
+private enum class ExpansionState { Collapsed, Expanded }
 
 private data class GroupStatus(
     val summary: String,
@@ -56,6 +67,7 @@ fun GroupCard(
     content: @Composable () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     val anyEnabled = group.alarms.any { it.isEnabled }
     val context = LocalContext.current
     var ticker by remember { mutableLongStateOf(System.currentTimeMillis()) }
@@ -88,9 +100,57 @@ fun GroupCard(
 
     val contentColor = MaterialTheme.colorScheme.onSurface
 
-    // Arrow rotation using SpatialSpring for natural physics
+    // AnchoredDraggable State for swipe-to-expand
+    val density = LocalDensity.current
+    val decaySpec = rememberSplineBasedDecay<Float>()
+    var contentHeight by remember { mutableStateOf(0f) }
+    
+    val state = remember(density, decaySpec) {
+        AnchoredDraggableState<ExpansionState>(
+            initialValue = if (group.isExpanded) ExpansionState.Expanded else ExpansionState.Collapsed,
+            anchors = DraggableAnchors {
+                ExpansionState.Collapsed at 0f
+            },
+            positionalThreshold = { it * 0.5f },
+            velocityThreshold = { with(density) { 100.dp.toPx() } },
+            snapAnimationSpec = spatialSpring(),
+            decayAnimationSpec = decaySpec
+        )
+    }
+
+    // Update anchors when contentHeight changes
+    LaunchedEffect(contentHeight) {
+        if (contentHeight > 0f) {
+            state.updateAnchors(
+                DraggableAnchors {
+                    ExpansionState.Collapsed at 0f
+                    ExpansionState.Expanded at contentHeight
+                }
+            )
+        }
+    }
+
+    // Keep model in sync with drag state
+    LaunchedEffect(state) {
+        snapshotFlow { state.currentValue }
+            .collect { expanded ->
+                group.isExpanded = expanded == ExpansionState.Expanded
+            }
+    }
+
+    // Sync state if model changes externally (e.g. from arrow click)
+    LaunchedEffect(group.isExpanded) {
+        val target = if (group.isExpanded) ExpansionState.Expanded else ExpansionState.Collapsed
+        if (state.currentValue != target) {
+            scope.launch {
+                state.animateTo(target)
+            }
+        }
+    }
+
+    // Arrow rotation using the draggable progress
     val rotation by animateFloatAsState(
-        targetValue = if (group.isExpanded) 180f else 0f, 
+        targetValue = if (state.targetValue == ExpansionState.Expanded) 180f else 0f, 
         animationSpec = spatialSpring(),
         label = "arrow"
     )
@@ -148,7 +208,6 @@ fun GroupCard(
         modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 10.dp)
-            .animateContentSize(animationSpec = effectsSpring<androidx.compose.ui.unit.IntSize>())
             .border(
                 width = 1.dp,
                 color = outlineColor,
@@ -163,7 +222,13 @@ fun GroupCard(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .bounceClickable(onClick = { group.isExpanded = !group.isExpanded })
+                    .anchoredDraggable(state, Orientation.Vertical)
+                    .bounceClickable(onClick = { 
+                        scope.launch {
+                            val target = if (state.currentValue == ExpansionState.Collapsed) ExpansionState.Expanded else ExpansionState.Collapsed
+                            state.animateTo(target)
+                        }
+                    })
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -234,7 +299,12 @@ fun GroupCard(
                     // Expander Arrow (Right-aligned, bouncy)
                     Box(
                         modifier = Modifier
-                            .bounceClickable { group.isExpanded = !group.isExpanded }
+                            .bounceClickable { 
+                                scope.launch {
+                                    val target = if (state.currentValue == ExpansionState.Collapsed) ExpansionState.Expanded else ExpansionState.Collapsed
+                                    state.animateTo(target)
+                                }
+                            }
                             .padding(8.dp)
                             .rotate(rotation)
                     ) {
@@ -248,37 +318,53 @@ fun GroupCard(
                 }
             }
 
-            // Adjust Control Row (Visible only when expanded)
-            if (group.isExpanded) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .padding(bottom = 10.dp),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    OutlinedButton(
-                        onClick = onAdjust,
-                        border = BorderStroke(2.dp, contentColor.copy(alpha = 0.5f))
-                    ) {
-                        Text(
-                            stringResource(R.string.adjust_group_time),
-                            style = MaterialTheme.typography.labelMedium,
-                            fontSize = 12.sp,
-                            color = contentColor
-                        )
-                    }
-                }
-            }
-
-            // EXPANDED CONTENT
-            if (group.isExpanded) {
+            // EXPANDED CONTENT AREA
+            // We use a box that clips based on the current drag offset
+            val currentOffset = try { state.requireOffset() } catch (e: Exception) { 0f }
+            
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(with(density) { currentOffset.coerceAtLeast(0f).toDp() })
+                    .clip(RectangleShape)
+            ) {
+                // Inner Content (Alarms + Adjust Row)
+                // We wrap it in unbounded height to measure it properly even when parent is 0dp
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .wrapContentHeight(unbounded = true, align = Alignment.Top)
+                        .onSizeChanged { size ->
+                            // Measure natural height of EVERYTHING in the expansion area
+                            if (size.height > 0) {
+                                contentHeight = size.height.toFloat()
+                            }
+                        }
                         .padding(horizontal = 8.dp)
                         .padding(bottom = 8.dp)
                 ) {
+                    // Adjust Control Row
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp)
+                            .padding(bottom = 10.dp),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        OutlinedButton(
+                            onClick = onAdjust,
+                            border = BorderStroke(2.dp, contentColor.copy(alpha = 0.5f))
+                        ) {
+                            Text(
+                                stringResource(R.string.adjust_group_time),
+                                style = MaterialTheme.typography.labelMedium,
+                                fontSize = 12.sp,
+                                color = contentColor
+                            )
+                        }
+                    }
+
+                    // The actual alarms list
                     content()
                 }
             }

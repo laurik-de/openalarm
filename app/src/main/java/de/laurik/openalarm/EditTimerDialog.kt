@@ -38,7 +38,7 @@ fun EditTimerDialog(timerPresets: List<Int> = listOf(10, 15, 30), onDismiss: () 
             modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.5f)).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onDismiss() },
             contentAlignment = Alignment.BottomCenter
         ) {
-            Surface(modifier = Modifier.fillMaxWidth().clickable(enabled = false) {}, shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp), color = MaterialTheme.colorScheme.surface) {
+            Surface(modifier = Modifier.fillMaxWidth().clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, enabled = false) {}, shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp), color = MaterialTheme.colorScheme.surface) {
                 SmartTimePickerLayout(
                     hour = hour, minute = minute, seconds = second,
                     updateTrigger = updateTrigger, // Pass trigger

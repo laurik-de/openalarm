@@ -13,6 +13,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.*
 import androidx.compose.material.icons.Icons
@@ -421,7 +422,7 @@ fun AlarmRingingScreen(
 fun SnoozePickerOverlay(presets: List<Int>, onDismiss: () -> Unit, onSelect: (Int?) -> Unit) {
 
     Box(
-        Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.8f)).clickable { onDismiss() },
+        Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.8f)).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onDismiss() },
         contentAlignment = Alignment.Center
     ) {
         Card(

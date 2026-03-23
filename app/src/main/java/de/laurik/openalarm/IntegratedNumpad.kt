@@ -58,19 +58,19 @@ fun IntegratedNumpad(
                             .weight(1f)
                             .fillMaxHeight()
                             .padding(2.dp)
-                            .clip(RoundedCornerShape(12.dp)) // Slightly rounded squares
-                            .background(
-                                when(key) {
-                                    "DEL" -> MaterialTheme.colorScheme.surfaceContainerHigh
-                                    else -> MaterialTheme.colorScheme.surfaceContainerHighest
-                                }
-                            )
                             .bounceClickable {
                                 when(key) {
                                     "DEL" -> onDelete()
                                     else -> onInput(key)
                                 }
-                            },
+                            }
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(
+                                when(key) {
+                                    "DEL" -> MaterialTheme.colorScheme.surfaceContainerHigh
+                                    else -> MaterialTheme.colorScheme.surfaceContainerHighest
+                                }
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
                         when(key) {
@@ -97,9 +97,9 @@ fun IntegratedNumpad(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                    .clickable { onCancel() },
+                    .bounceClickable { onCancel() }
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(Icons.Default.Close, stringResource(R.string.action_cancel), tint = MaterialTheme.colorScheme.onSurface)
@@ -110,9 +110,9 @@ fun IntegratedNumpad(
                 modifier = Modifier
                     .weight(2f) // Wider Done button
                     .fillMaxHeight()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.primaryContainer)
-                    .clickable { onConfirm() },
+                    .bounceClickable { onConfirm() }
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {

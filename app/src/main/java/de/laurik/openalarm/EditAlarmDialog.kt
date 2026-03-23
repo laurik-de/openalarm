@@ -17,6 +17,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import de.laurik.openalarm.ui.theme.bounce
 import de.laurik.openalarm.ui.theme.bounceClickable
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.Alignment
@@ -289,7 +290,7 @@ fun EditAlarmDialog(
                                                                     color = if (selectedColor == colorInt) MaterialTheme.colorScheme.primary else Color.LightGray.copy(alpha = 0.5f),
                                                                     shape = CircleShape
                                                                 )
-                                                                .bounceClickable { selectedColor = colorInt },
+                                                                .bounceClickable(indication = LocalIndication.current) { selectedColor = colorInt },
                                                             contentAlignment = Alignment.Center
                                                         ) {
                                                             if (isSelected) {

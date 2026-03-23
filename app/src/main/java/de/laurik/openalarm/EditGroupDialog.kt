@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import de.laurik.openalarm.ui.theme.bounce
 import de.laurik.openalarm.ui.theme.bounceClickable
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -85,7 +86,7 @@ fun EditGroupDialog(
                                     if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
                                     CircleShape
                                 )
-                                .bounceClickable { selectedColor = colorInt },
+                                .bounceClickable(indication = LocalIndication.current) { selectedColor = colorInt },
                             contentAlignment = Alignment.Center
                         ) {
                              if (isSelected) {

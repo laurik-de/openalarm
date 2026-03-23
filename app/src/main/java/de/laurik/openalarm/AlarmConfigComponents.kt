@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import de.laurik.openalarm.ui.theme.bounce
 import de.laurik.openalarm.ui.theme.bounceClickable
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -160,7 +161,7 @@ fun AlarmConfigSection(
             headlineContent = { Text(stringResource(R.string.label_sound)) },
             supportingContent = { Text(ringtoneTitle) },
             trailingContent = { Text(">") },
-            modifier = Modifier.bounceClickable {
+            modifier = Modifier.bounceClickable(indication = LocalIndication.current) {
                 showSourceSelector = true
             }
         )
@@ -343,12 +344,12 @@ fun AlarmConfigSection(
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.setting_snooze_duration)) },
                     supportingContent = { Text(if (snoozeDuration == null) stringResource(R.string.setting_snooze_duration_subtext_default, globalSnooze) else stringResource(R.string.setting_snooze_duration_subtext_custom, snoozeDuration)) },
-                    modifier = Modifier.bounceClickable { onSnoozeDurationChange(snoozeDuration) }
+                    modifier = Modifier.bounceClickable(indication = LocalIndication.current) { onSnoozeDurationChange(snoozeDuration) }
                 )
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.setting_max_snoozes)) },
                     supportingContent = { Text(if (maxSnoozes == null) stringResource(R.string.setting_max_snoozes_subtext_infinite) else stringResource(R.string.setting_max_snoozes_subtext_custom, maxSnoozes)) },
-                    modifier = Modifier.bounceClickable { onMaxSnoozesChange(maxSnoozes) }
+                    modifier = Modifier.bounceClickable(indication = LocalIndication.current) { onMaxSnoozesChange(maxSnoozes) }
                 )
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.setting_snooze_presets)) },
@@ -357,7 +358,7 @@ fun AlarmConfigSection(
                         val fmtMinutesShort = stringResource(R.string.fmt_minutes_short)
                         Text(if (snoozePresets == null) defaultText else snoozePresets.joinToString(", ") { it.toString() + fmtMinutesShort })
                     },
-                    modifier = Modifier.bounceClickable { onSnoozePresetsChange(snoozePresets) }
+                    modifier = Modifier.bounceClickable(indication = LocalIndication.current) { onSnoozePresetsChange(snoozePresets) }
                 )
             }
         }
@@ -365,7 +366,7 @@ fun AlarmConfigSection(
         ListItem(
             headlineContent = { Text(stringResource(R.string.setting_timeout)) },
             supportingContent = { Text(if (autoStopDuration == null) stringResource(R.string.setting_timeout_default, globalAutoStop) else stringResource(R.string.setting_timeout_custom, autoStopDuration)) },
-            modifier = Modifier.bounceClickable { onAutoStopDurationChange(autoStopDuration) }
+            modifier = Modifier.bounceClickable(indication = LocalIndication.current) { onAutoStopDurationChange(autoStopDuration) }
         )
 
         HorizontalDivider()
@@ -377,7 +378,7 @@ fun AlarmConfigSection(
             ListItem(
                 headlineContent = { Text(stringResource(R.string.setting_ringing_mode)) },
                 supportingContent = { Text(ringingMode.name) },
-                modifier = Modifier.bounceClickable {
+                modifier = Modifier.bounceClickable(indication = LocalIndication.current) {
                     val modes = if (showDefaultRingingMode) {
                         RingingScreenMode.entries.toList()
                     } else {
@@ -393,7 +394,7 @@ fun AlarmConfigSection(
         ListItem(
             headlineContent = { Text(stringResource(R.string.setting_alarm_background)) },
             supportingContent = { Text(if (backgroundType == "COLOR") stringResource(R.string.setting_text_solid_color) else stringResource(R.string.setting_text_gradient)) },
-            modifier = Modifier.bounceClickable { onBackgroundTypeChange(backgroundType) }
+            modifier = Modifier.bounceClickable(indication = LocalIndication.current) { onBackgroundTypeChange(backgroundType) }
         )
     }
 }
@@ -432,7 +433,7 @@ fun ColorPickerGrid(
                             color = if (isSelected) MaterialTheme.colorScheme.primary else Color.LightGray.copy(alpha = 0.5f),
                             shape = MaterialTheme.shapes.medium
                         )
-                        .clickable { onColorSelected(colorHex) },
+                        .bounceClickable(indication = LocalIndication.current) { onColorSelected(colorHex) },
                     contentAlignment = Alignment.Center
                 ) {
                     if (isSelected) {

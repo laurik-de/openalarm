@@ -19,6 +19,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import de.laurik.openalarm.ui.theme.bounce
 import de.laurik.openalarm.ui.theme.bounceClickable
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -298,7 +299,7 @@ fun RingtoneListItem(
     } else ""
     
     ListItem(
-        modifier = Modifier.bounceClickable { onSelect() },
+        modifier = Modifier.bounceClickable(indication = LocalIndication.current) { onSelect() },
         headlineContent = { 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(rt.name, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, false))
@@ -321,7 +322,7 @@ fun RingtoneListItem(
                     // Loop through modes for folders
                     Text(
                         stringResource(R.string.action_change),
-                        modifier = Modifier.bounceClickable {
+                        modifier = Modifier.bounceClickable(indication = LocalIndication.current) {
                             val next = if (rt.mode == CustomRingtoneSelectionMode.ROTATING) CustomRingtoneSelectionMode.RANDOM else CustomRingtoneSelectionMode.ROTATING
                             onUpdateMode(next)
                         },

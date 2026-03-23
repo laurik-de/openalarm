@@ -165,7 +165,8 @@ fun QuickAdjustDialog(
                             FilledTonalButton(
                                 onClick = { isCustomMode = true },
                                 modifier = Modifier.bounce(customIS),
-                                interactionSource = customIS
+                                interactionSource = customIS,
+                                shape = RoundedCornerShape(8.dp)
                             ) {
                                 Text(stringResource(R.string.action_custom_time))
                             }
