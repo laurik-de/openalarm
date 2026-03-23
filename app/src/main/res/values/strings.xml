@@ -106,7 +106,7 @@
     <string name="setting_pick_color">Select Color</string>
     <string name="setting_pick_top_color">Top Color</string>
     <string name="setting_pick_bottom_color">Bottom Color</string>
-    <string name="section_hurdles">Hurdles (Obstacles)</string>
+    <string name="section_hurdles">Hurdles</string>
     <string name="setting_hurdle_enabled">Enable Hurdles</string>
     <string name="setting_hurdle_enabled_desc">Require solving a task before stopping/snoozing</string>
     <string name="hurdle_day_of_week">Current Day of Week</string>
@@ -123,6 +123,7 @@
     <string name="hurdle_game_tap_hint">Tap anywhere to Jump</string>
     <string name="hurdle_math_auto_confirm">Succeeds automatically on correct answer</string>
     <string name="action_test_hurdle">Test Hurdle</string>
+    <string name="label_hurdle_beta"> (BETA)</string>
 
     <!-- Timer Configuration -->
     <string name="title_new_timer">New Timer</string>
@@ -226,6 +227,7 @@
     <string name="fmt_minutes_short">%1$dm</string>
     <string name="tts_time_announce">It is %1$s</string>
     <string name="fmt_time_printf">%1$02d:%2$02d</string>
+    <string name="fmt_timer_count_up">+ %1$02d:%2$02d</string>
 
     <!-- Settings & Advanced -->
     <string name="title_settings">Settings</string>

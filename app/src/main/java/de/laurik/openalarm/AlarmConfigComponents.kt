@@ -409,7 +409,7 @@ fun AlarmConfigSection(
 
         // 6. HURDLES
         Text(
-            stringResource(R.string.section_hurdles),
+            stringResource(R.string.section_hurdles) + stringResource(R.string.label_hurdle_beta),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(vertical = 12.dp)
@@ -430,7 +430,7 @@ fun AlarmConfigSection(
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
                 
-                HurdleType.entries.forEach { type ->
+                HurdleType.entries.filter { it != HurdleType.GAME }.forEach { type ->
                     val labelId = when(type) {
                         HurdleType.DAY_OF_WEEK -> R.string.hurdle_day_of_week
                         HurdleType.MATH_EASY -> R.string.hurdle_math_easy

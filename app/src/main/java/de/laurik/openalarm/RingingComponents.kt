@@ -90,7 +90,7 @@ fun EasyModeLayout(
                     modifier = Modifier.weight(1f).height(70.dp),
                     shape = MaterialTheme.shapes.medium
                 ) {
-                    Text("$mins min", fontSize = 16.sp, color = Color.White)
+                    Text(stringResource(R.string.label_minutes_fmt, mins), fontSize = 16.sp, color = Color.White)
                 }
             }
         }

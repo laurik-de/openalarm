@@ -317,7 +317,7 @@ fun TimerRingingScreen(startTime: Long, timerId: Int, onStop: () -> Unit, onAdd:
                 val d = if (diff < 0) 0 else diff
                 val s = (d / 1000) % 60
                 val m = (d / (1000 * 60))
-                countUpStr = String.format(java.util.Locale.getDefault(), "+ %02d:%02d", m, s)
+                countUpStr = context.getString(R.string.fmt_timer_count_up, m, s)
             }
             // Faster update for sub-minute precision
             delay(if (isRunning && (trueEndTime - System.currentTimeMillis()) < 60000) 50 else 500)
@@ -372,7 +372,7 @@ fun TimerRingingScreen(startTime: Long, timerId: Int, onStop: () -> Unit, onAdd:
                         border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.5f)),
                         modifier = Modifier.padding(horizontal = 4.dp).height(40.dp)
                     ) {
-                        Text("+${seconds / 60}m", color = Color.White)
+                        Text(stringResource(R.string.action_add_minutes, seconds / 60), color = Color.White)
                     }
                 }
             }
