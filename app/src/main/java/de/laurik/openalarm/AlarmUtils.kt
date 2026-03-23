@@ -8,7 +8,9 @@ import java.util.Calendar
 data class NextAlarmInfo(
     val timeString: String,
     val countdownString: String,
-    val timestamp: Long
+    val timestamp: Long,
+    val isSingleUse: Boolean = false,
+    val isSelfDestroying: Boolean = false
 )
 
 object AlarmUtils {
@@ -73,6 +75,8 @@ object AlarmUtils {
 
         for (group in AlarmRepository.groups) {
             for (alarm in group.alarms) {
+                if (!alarm.isEnabled) continue
+
                 // Check if this alarm matches the target time
                 val nextTime = getNextOccurrence(
                     alarm.hour, alarm.minute, alarm.daysOfWeek, group.offsetMinutes,
@@ -82,12 +86,24 @@ object AlarmUtils {
 
                 if (nextTime == targetTime) {
                     // Skip logic: Set skippedUntil to 1 second after this target time.
-                    val updated = alarm.copy(skippedUntil = nextTime + 1000)
-                    AlarmRepository.updateAlarm(context, updated)
+                    
+                    if (alarm.isSingleUse) {
+                        if (alarm.isSelfDestroying) {
+                            AlarmRepository.deleteAlarm(context, alarm)
+                        } else {
+                            val updated = alarm.copy(isEnabled = false)
+                            AlarmRepository.updateAlarm(context, updated)
+                            val scheduler = AlarmScheduler(context)
+                            scheduler.schedule(updated, group.offsetMinutes)
+                        }
+                    } else {
+                        val updated = alarm.copy(skippedUntil = nextTime + 1000)
+                        AlarmRepository.updateAlarm(context, updated)
 
-                    // We also need to reschedule so Android AlarmManager knows to wake up for the NEW next time
-                    val scheduler = AlarmScheduler(context)
-                    scheduler.schedule(updated, group.offsetMinutes)
+                        // We also need to reschedule so Android AlarmManager knows to wake up for the NEW next time
+                        val scheduler = AlarmScheduler(context)
+                        scheduler.schedule(updated, group.offsetMinutes)
+                    }
                     return
                 }
             }
@@ -157,6 +173,8 @@ object AlarmUtils {
         val now = System.currentTimeMillis()
         var minDiff = Long.MAX_VALUE
         var nextAlarmTime: Long? = null
+        var isSingleUse = false
+        var isSelfDestroying = false
 
         for (group in AlarmRepository.groups) {
             for (alarm in group.alarms) {
@@ -173,6 +191,8 @@ object AlarmUtils {
                 if (diff < minDiff) {
                     minDiff = diff
                     nextAlarmTime = effectiveTime
+                    isSingleUse = alarm.isSingleUse
+                    isSelfDestroying = alarm.isSelfDestroying
                 }
             }
         }
@@ -191,7 +211,7 @@ object AlarmUtils {
             context.getString(R.string.fmt_countdown_short, hoursLeft, minsLeft)
         }
 
-        return NextAlarmInfo(timeStr, countdownStr, nextAlarmTime)
+        return NextAlarmInfo(timeStr, countdownStr, nextAlarmTime, isSingleUse, isSelfDestroying)
     }
 
     // Kept for backward compatibility if any older layouts use it
