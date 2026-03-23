@@ -57,6 +57,8 @@
     <string name="action_add_to_group">+ Add Alarm to Group</string>
     <string name="label_alarm_group">Alarm Group</string>
     <string name="label_new_group_name">New Group Name</string>
+    <string name="label_new_group">New Group</string>
+    <string name="label_group_color">Group Color</string>
 
     <!-- Alarm Configuration -->
     <string name="title_new_alarm">New Alarm</string>
@@ -297,6 +299,9 @@
     <string name="dialog_title_default_max_snoozes">Default Max Snoozes</string>
     <string name="dialog_title_default_snooze_presets">Default Snooze Options</string>
     <string name="label_default">Default</string>
+    <string name="label_default_snooze_short">Default Snooze</string>
+    <string name="label_select_snooze">Select Snooze</string>
+    <string name="label_snooze_count">Snooze %1$d %2$s</string>
     <string name="dialog_title_permission_required">Permission Required</string>
     <string name="dialog_msg_permission_exact_alarm">To ring alarms at the exact time, this app needs the \'Alarms &amp; Reminders\' permission.</string>
     <string name="dialog_msg_permission_full_screen">To show the alarm screen while the phone is locked, please allow \'Full-screen notifications\'.</string>

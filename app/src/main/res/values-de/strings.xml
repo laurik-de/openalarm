@@ -55,6 +55,10 @@
     <string name="hint_group_name">Gruppenname</string>
     <string name="action_create_new_group">Neue Gruppe erstellen</string>
     <string name="action_add_to_group">+ Wecker zu Gruppe hinzufügen</string>
+    <string name="label_alarm_group">Weckergruppe</string>
+    <string name="label_new_group_name">Neuer Gruppenname</string>
+    <string name="label_new_group">Neue Gruppe</string>
+    <string name="label_group_color">Gruppenfarbe</string>
 
     <!-- Alarm Configuration -->
     <string name="title_new_alarm">Neuer Wecker</string>
@@ -114,6 +118,12 @@
     <string name="hint_custom_tts_text">z.B. "Aufwachen! Es ist %time%"</string>
     <string name="desc_tts_variables" formatted="false">Verfügbare Variablen: %label%, %day%, %time%</string>
     <string name="label_tts_frequency">TTS-Häufigkeit</string>
+    <string name="action_open_keyboard">Tastatur öffnen</string>
+    <string name="timer_label_remaining">verbleibend</string>
+    <string name="action_pause">Pause</string>
+    <string name="action_resume">Fortsetzen</string>
+    <string name="title_alarm">Wecker</string>
+    <string name="title_timer">Timer</string>
 
     <!-- Ringing Screen -->
     <string name="label_alarm">Wecker</string>
@@ -135,6 +145,7 @@
     <string name="notif_alarm_silent_ringing">Wecker "%1$s" klingelt (Stumm)</string>
     <string name="notif_alarm_silent_ringing_no_label">Wecker klingelt (stumm)</string>
     <string name="notif_timer_running">Timer läuft</string>
+    <string name="notif_timer_paused">Timer pausiert</string>
     <string name="notif_timer_done">Timer abgelaufen!</string>
     <string name="notif_wake_up">Aufwachen!</string>
     <string name="notif_alarm_missed">Wecker verpasst</string>
@@ -193,7 +204,7 @@
     <string name="status_skipped_tomorrow">Morgen übersprungen</string>
     <string name="status_skipped_until">Übersprungen bis %1$s</string>
     <string name="label_minutes_fmt">%1$d Min.</string>
-    <string name="fmt_minutes_short">%1$d m</string>
+    <string name="fmt_minutes_short">%1$dm</string>
     <string name="tts_time_announce">Es ist %1$s</string>
     <string name="fmt_time_printf">%1$02d:%2$02d</string>
 
@@ -288,6 +299,9 @@
     <string name="dialog_title_default_max_snoozes">Standard-Schlummervorgänge</string>
     <string name="dialog_title_default_snooze_presets">Standard-Schlummeroptionen</string>
     <string name="label_default">Standard</string>
+    <string name="label_default_snooze_short">Standard-Schlummern</string>
+    <string name="label_select_snooze">Schlummern wählen</string>
+    <string name="label_snooze_count">Schlummern %1$d %2$s</string>
     <string name="dialog_title_permission_required">Berechtigung erforderlich</string>
     <string name="dialog_msg_permission_exact_alarm">Um Wecker pünchtlich auszulösen, benötigt diese App die Berechtigung \'Wecker &amp; Erinnerungen\'.</string>
     <string name="dialog_msg_permission_full_screen">Um den Weckbildschirm bei gesperrtem Telefon anzuzeigen, erlaube bitte \'Vollbild-Benachrichtigungen\'.</string>

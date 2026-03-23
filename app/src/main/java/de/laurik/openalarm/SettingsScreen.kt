@@ -283,7 +283,7 @@ fun SettingsScreen(
                     var showAdjustPresetsEdit by remember { mutableStateOf(false) }
                     ListItem(
                         headlineContent = { Text(stringResource(R.string.label_timer_adjust_presets)) },
-                        supportingContent = { Text(timerAdjustPresets.joinToString { "+${it / 60}m" }) },
+                        supportingContent = { Text(timerAdjustPresets.joinToString { context.getString(R.string.label_add_minutes_short, it / 60) }) },
                         modifier = Modifier.bounceClickable(indication = LocalIndication.current) { showAdjustPresetsEdit = true }
                     )
 

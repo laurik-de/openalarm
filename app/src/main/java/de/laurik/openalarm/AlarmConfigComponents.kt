@@ -377,7 +377,7 @@ fun AlarmConfigSection(
         if (showRingingMode) {
             ListItem(
                 headlineContent = { Text(stringResource(R.string.setting_ringing_mode)) },
-                supportingContent = { Text(ringingMode.name) },
+                supportingContent = { Text(ringingMode.localizedName()) },
                 modifier = Modifier.bounceClickable(indication = LocalIndication.current) {
                     val modes = if (showDefaultRingingMode) {
                         RingingScreenMode.entries.toList()
@@ -520,4 +520,13 @@ fun BackgroundConfigDialog(
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.button_cancel)) }
         }
     )
+}
+
+@Composable
+fun RingingScreenMode.localizedName(): String {
+    return when (this) {
+        RingingScreenMode.EASY -> stringResource(R.string.mode_easy)
+        RingingScreenMode.CLEAN -> stringResource(R.string.mode_clean)
+        RingingScreenMode.DEFAULT -> stringResource(R.string.mode_default)
+    }
 }

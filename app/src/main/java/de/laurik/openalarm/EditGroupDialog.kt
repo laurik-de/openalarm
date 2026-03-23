@@ -40,16 +40,16 @@ fun EditGroupDialog(
     if (showDeleteConfirm && onDelete != null) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title = { Text("Delete Group '${group.name}'?") },
-            text = { Text("Do you want to delete the alarms inside this group too?") },
+            title = { Text(stringResource(R.string.delete_group_name, group.name)) },
+            text = { Text(stringResource(R.string.groups_delete_alarms_too)) },
             confirmButton = {
                 TextButton(onClick = { onDelete(false); showDeleteConfirm = false; onDismiss() }) {
-                    Text("Delete All", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.group_delete_all), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { onDelete(true); showDeleteConfirm = false; onDismiss() }) {
-                    Text("Keep Alarms")
+                    Text(stringResource(R.string.group_delete_keep_alarms))
                 }
             }
         )
@@ -58,18 +58,18 @@ fun EditGroupDialog(
     Dialog(onDismissRequest = onDismiss) {
         Surface(shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.surface) {
             Column(Modifier.padding(24.dp)) {
-                Text(if (isNewGroup) "New Group" else "Edit Group", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onSurface)
+                Text(if (isNewGroup) stringResource(R.string.label_new_group) else stringResource(R.string.edit_group), style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onSurface)
                 Spacer(Modifier.height(16.dp))
 
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Group Name") },
+                    label = { Text(stringResource(R.string.hint_group_name)) },
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 Spacer(Modifier.height(16.dp))
-                Text("Group Color", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.label_group_color), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(8.dp))
 
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {

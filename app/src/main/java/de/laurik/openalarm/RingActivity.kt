@@ -270,7 +270,7 @@ fun TimerRingingScreen(startTime: Long, timerId: Int, onStop: () -> Unit, onAdd:
                 .padding(16.dp)
                 .statusBarsPadding()
         ) {
-            Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+            Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.desc_back), tint = Color.White)
         }
 
         Column(
@@ -372,7 +372,7 @@ fun AlarmRingingScreen(
             if (alarm != null && alarm.currentSnoozeCount > 0) {
                 val maxStr = alarm.maxSnoozes?.let { "/ $it" } ?: ""
                 Text(
-                    text = "Snooze ${alarm.currentSnoozeCount} $maxStr",
+                    text = stringResource(R.string.label_snooze_count, alarm.currentSnoozeCount, maxStr),
                     color = Color.LightGray,
                     fontSize = 18.sp,
                     modifier = Modifier.padding(top = 8.dp)
@@ -430,7 +430,7 @@ fun SnoozePickerOverlay(presets: List<Int>, onDismiss: () -> Unit, onSelect: (In
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
             Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Select Snooze", style = MaterialTheme.typography.headlineSmall)
+                Text(stringResource(R.string.label_select_snooze), style = MaterialTheme.typography.headlineSmall)
                 Spacer(Modifier.height(24.dp))
                 
                 presets.forEach { mins ->
@@ -438,7 +438,7 @@ fun SnoozePickerOverlay(presets: List<Int>, onDismiss: () -> Unit, onSelect: (In
                         onClick = { onSelect(mins) },
                         modifier = Modifier.fillMaxWidth().height(56.dp).padding(vertical = 4.dp)
                     ) {
-                        Text("$mins minutes")
+                        Text(stringResource(R.string.fmt_duration_m, mins))
                     }
                 }
                 
@@ -446,7 +446,7 @@ fun SnoozePickerOverlay(presets: List<Int>, onDismiss: () -> Unit, onSelect: (In
                     onClick = { onSelect(null) },
                     modifier = Modifier.fillMaxWidth().height(56.dp).padding(vertical = 4.dp)
                 ) {
-                    Text("Deafult Snooze")
+                    Text(stringResource(R.string.label_default_snooze_short))
                 }
             }
         }

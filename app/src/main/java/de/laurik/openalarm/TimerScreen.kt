@@ -240,7 +240,7 @@ fun TimerSetupView(
                                         .bounce(presetIS),
                                     interactionSource = presetIS
                                 ) {
-                                    Text("${mins}m")
+                                    Text(stringResource(R.string.fmt_minutes_short, mins))
                                 }
                             }
                         }
@@ -405,7 +405,7 @@ fun TimerRunningView(
                                     .bounce(addIS),
                                 interactionSource = addIS
                             ) {
-                                Text("+${seconds / 60}m", color = Color.White)
+                                Text(stringResource(R.string.label_add_minutes_short, seconds / 60), color = Color.White)
                             }
                         }
                     }
