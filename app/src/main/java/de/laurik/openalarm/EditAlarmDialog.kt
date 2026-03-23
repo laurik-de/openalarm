@@ -172,7 +172,10 @@ fun EditAlarmDialog(
                                 ) {
                                     Icon(Icons.Default.Check, null)
                                     Spacer(Modifier.width(8.dp))
-                                    Text(stringResource(R.string.action_save), fontWeight = FontWeight.Bold)
+                                    Text(
+                                        stringResource(R.string.action_save),
+                                        fontWeight = FontWeight.Bold
+                                    )
                                 }
                             }
                         }
@@ -187,7 +190,8 @@ fun EditAlarmDialog(
                         isNumpadActive = numpadContent != null
                         Column(modifier = Modifier.fillMaxSize()) {
                             Column(
-                                modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
+                                modifier = Modifier.weight(1f)
+                                    .verticalScroll(rememberScrollState()),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Spacer(Modifier.height(24.dp))
@@ -238,15 +242,17 @@ fun EditAlarmDialog(
                                         ringingMode = ringingScreenMode,
                                         onRingingModeChange = { ringingScreenMode = it },
                                         backgroundType = backgroundType,
-                                        onBackgroundTypeChange = { backgroundType = it; showBackgroundPicker = true },
+                                        onBackgroundTypeChange = {
+                                            backgroundType = it; showBackgroundPicker = true
+                                        },
                                         backgroundValue = backgroundValue,
                                         onBackgroundValueChange = { /* picker handles this */ },
                                         hurdleEnabled = hurdleEnabled,
-                                    onHurdleEnabledChange = { hurdleEnabled = it },
-                                    selectedHurdles = selectedHurdles,
-                                    onSelectedHurdlesChange = { selectedHurdles = it },
-                                    globalSnooze = globalSnooze,
-                                    globalAutoStop = globalAutoStop
+                                        onHurdleEnabledChange = { hurdleEnabled = it },
+                                        selectedHurdles = selectedHurdles,
+                                        onSelectedHurdlesChange = { selectedHurdles = it },
+                                        globalSnooze = globalSnooze,
+                                        globalAutoStop = globalAutoStop
                                     )
 
                                     HorizontalDivider(Modifier.padding(horizontal = 16.dp))
@@ -293,10 +299,14 @@ fun EditAlarmDialog(
                                                                 .background(Color(colorInt))
                                                                 .border(
                                                                     width = if (selectedColor == colorInt) 3.dp else 1.dp,
-                                                                    color = if (selectedColor == colorInt) MaterialTheme.colorScheme.primary else Color.LightGray.copy(alpha = 0.5f),
+                                                                    color = if (selectedColor == colorInt) MaterialTheme.colorScheme.primary else Color.LightGray.copy(
+                                                                        alpha = 0.5f
+                                                                    ),
                                                                     shape = CircleShape
                                                                 )
-                                                                .bounceClickable(indication = LocalIndication.current) { selectedColor = colorInt },
+                                                                .bounceClickable(indication = LocalIndication.current) {
+                                                                    selectedColor = colorInt
+                                                                },
                                                             contentAlignment = Alignment.Center
                                                         ) {
                                                             if (isSelected) {
@@ -330,107 +340,6 @@ fun EditAlarmDialog(
                                                     )
                                                 }
 
-                                            DropdownMenu(
-                                                expanded = groupDropdownExpanded,
-                                                onDismissRequest = {
-                                                    groupDropdownExpanded = false
-                                                }
-                                            ) {
-                                                DropdownMenuItem(
-                                                    text = { Text(stringResource(R.string.label_no_group)) },
-                                                    onClick = {
-                                                        selectedGroupId = "default"
-                                                        groupDropdownExpanded = false
-                                                    }
-                                                )
-                                                HorizontalDivider()
-                                                allGroups.filter { it.id != "default" }
-                                                    .forEach { group ->
-                                                        DropdownMenuItem(
-                                                            text = { Text(group.name) },
-                                                            onClick = {
-                                                                selectedGroupId = group.id
-                                                                groupDropdownExpanded = false
-                                                            }
-                                                        )
-                                                    }
-                                                HorizontalDivider()
-                                                DropdownMenuItem(
-                                                    text = { Text(stringResource(R.string.action_create_new_group)) },
-                                                    onClick = {
-                                                        isNewGroupMode = true
-                                                        groupDropdownExpanded = false
-                                                    }
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        // Bottom Actions
-                        if (numpadContent != null) {
-                            Surface(
-                                shadowElevation = 8.dp,
-                                color = MaterialTheme.colorScheme.surfaceContainerHighest
-                            ) {
-                                numpadContent()
-                            }
-                        } else {
-                            Surface(
-                                shadowElevation = 8.dp,
-                                color = MaterialTheme.colorScheme.surface
-                            ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().padding(16.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    TextButton(
-                                        onClick = onDismiss,
-                                        modifier = Modifier.height(56.dp).weight(1f)
-                                    ) { Text(stringResource(R.string.action_cancel)) }
-                                    Spacer(Modifier.width(16.dp))
-                                    Button(
-                                        onClick = {
-                                            val updated = alarm.copy(
-                                                hour = hour,
-                                                minute = minute,
-                                                label = label,
-                                                daysOfWeek = daysOfWeek,
-                                                vibrationEnabled = vibration,
-                                                ringtoneUri = currentUriStr,
-                                                customVolume = customVolume,
-                                                fadeInSeconds = fadeInSeconds,
-                                                ttsMode = ttsMode,
-                                                ttsText = ttsText.ifBlank { null },
-                                                groupId = selectedGroupId,
-                                                snoozeDuration = snoozeOverride,
-                                                autoStopDuration = autoStopOverride,
-                                                isSnoozeEnabled = isSnoozeEnabled,
-                                                directSnooze = directSnooze,
-                                                maxSnoozes = maxSnoozes,
-                                                snoozePresets = snoozePresets,
-                                                isSingleUse = isSingleUse,
-                                                isSelfDestroying = isSelfDestroying,
-                                                ringingScreenMode = ringingScreenMode,
-                                                backgroundType = backgroundType,
-                                                backgroundValue = backgroundValue,
-                                                hurdleEnabled = hurdleEnabled,
-                                                selectedHurdles = selectedHurdles
-                                            )
-                                            if (isNewGroupMode && newGroupName.isNotBlank()) {
-                                                onSave(
-                                                    updated,
-                                                    newGroupName,
-                                                    selectedColor
-                                                )
-                                            } else {
-                                                onSave(updated, null, null)
-                                            }
-                                        },
-                                        modifier = Modifier.height(56.dp).weight(1f)
-                                    ) { Text(stringResource(R.string.action_save)) }
                                                 DropdownMenu(
                                                     expanded = groupDropdownExpanded,
                                                     onDismissRequest = {
@@ -477,7 +386,9 @@ fun EditAlarmDialog(
                                     tonalElevation = 8.dp,
                                     shadowElevation = 16.dp
                                 ) {
-                                    Column(Modifier.navigationBarsPadding().padding(bottom = 16.dp)) {
+                                    Column(
+                                        Modifier.navigationBarsPadding().padding(bottom = 16.dp)
+                                    ) {
                                         numpadContent()
                                     }
                                 }
@@ -493,14 +404,14 @@ fun EditAlarmDialog(
                     globalSnooze,
                     { showSnoozeEdit = false },
                     { snoozeOverride = it; showSnoozeEdit = false })
-                
+
                 if (showAutoStopEdit) OverrideInputDialog(
                     stringResource(R.string.dialog_title_auto_stop_timeout),
                     autoStopOverride,
                     globalAutoStop,
                     { showAutoStopEdit = false },
                     { autoStopOverride = it; showAutoStopEdit = false })
-                
+
                 if (showMaxSnoozeEdit) {
                     var buffer by remember { mutableStateOf(maxSnoozes?.toString() ?: "") }
                     Dialog(onDismissRequest = { showMaxSnoozeEdit = false }) {
@@ -518,9 +429,12 @@ fun EditAlarmDialog(
                                     style = MaterialTheme.typography.displayMedium
                                 )
                                 Spacer(Modifier.height(16.dp))
-                                OutlinedButton(onClick = {
-                                    showMaxSnoozeEdit = false; maxSnoozes = null
-                                }, Modifier.fillMaxWidth()) { Text(stringResource(R.string.action_set_unlimited)) }
+                                OutlinedButton(
+                                    onClick = {
+                                        showMaxSnoozeEdit = false; maxSnoozes = null
+                                    },
+                                    Modifier.fillMaxWidth()
+                                ) { Text(stringResource(R.string.action_set_unlimited)) }
                                 IntegratedNumpad(
                                     onInput = { if (buffer.length < 2) buffer += it },
                                     onDelete = {
@@ -537,7 +451,13 @@ fun EditAlarmDialog(
                 }
 
                 if (showSnoozePresetsEdit) {
-                    val globalPresets by settingsRepo.defaultSnoozePresets.collectAsState(initial = listOf(5, 10, 15))
+                    val globalPresets by settingsRepo.defaultSnoozePresets.collectAsState(
+                        initial = listOf(
+                            5,
+                            10,
+                            15
+                        )
+                    )
                     PresetEditDialog(
                         title = stringResource(R.string.dialog_title_snooze_presets),
                         currentValues = snoozePresets ?: globalPresets,
@@ -559,6 +479,9 @@ fun EditAlarmDialog(
                     )
                 }
             }
+        }
+    }
+}
 
 @Composable
 fun OverrideInputDialog(
