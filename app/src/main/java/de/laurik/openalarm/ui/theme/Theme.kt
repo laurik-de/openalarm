@@ -1,8 +1,12 @@
 package de.laurik.openalarm.ui.theme
 
 import android.os.Build
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Indication
 import androidx.compose.foundation.LocalIndication
@@ -46,6 +50,29 @@ fun Modifier.bounce(interactionSource: InteractionSource): Modifier {
     return this.graphicsLayer {
         scaleX = scale
         scaleY = scale
+    }
+}
+
+/**
+ * A modifier that performs a horizontal shake animation triggered by a change in [trigger].
+ */
+@Composable
+fun Modifier.shake(trigger: Long): Modifier {
+    val xOffset = remember { Animatable(0f) }
+    LaunchedEffect(trigger) {
+        if (trigger > 0) {
+            xOffset.snapTo(20f)
+            xOffset.animateTo(
+                targetValue = 0f,
+                animationSpec = spring(
+                    dampingRatio = 0.15f,
+                    stiffness = 3000f
+                )
+            )
+        }
+    }
+    return this.graphicsLayer {
+        translationX = xOffset.value
     }
 }
 

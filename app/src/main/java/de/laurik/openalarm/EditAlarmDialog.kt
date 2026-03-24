@@ -16,7 +16,9 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import de.laurik.openalarm.ui.theme.bounce
+import de.laurik.openalarm.ui.theme.shake
 import de.laurik.openalarm.ui.theme.bounceClickable
+import androidx.compose.animation.*
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -492,6 +494,13 @@ fun OverrideInputDialog(
     onConfirm: (Int?) -> Unit
 ) {
     var buffer by remember { mutableStateOf(currentVal?.toString() ?: "") }
+    var shakeTrigger by remember { mutableLongStateOf(0L) }
+    val context = LocalContext.current
+    
+    val isValid = remember(buffer) {
+        val v = buffer.toIntOrNull() ?: 0
+        v <= 180
+    }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.surface) {
@@ -506,10 +515,25 @@ fun OverrideInputDialog(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 } else {
+                    val color = if (isValid) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                     Text(
                         stringResource(R.string.label_minutes_fmt, buffer.toIntOrNull() ?: 0),
                         style = MaterialTheme.typography.displayMedium,
-                        color = MaterialTheme.colorScheme.primary
+                        color = color,
+                        modifier = Modifier.shake(shakeTrigger)
+                    )
+                }
+
+                AnimatedVisibility(
+                    visible = !isValid,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
+                    Text(
+                        text = stringResource(R.string.error_max_minutes, 180),
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.labelMedium,
+                        modifier = Modifier.padding(top = 8.dp)
                     )
                 }
 
@@ -526,7 +550,13 @@ fun OverrideInputDialog(
                 IntegratedNumpad(
                     onInput = { if (buffer.length < 3) buffer += it },
                     onDelete = { if (buffer.isNotEmpty()) buffer = buffer.dropLast(1) },
-                    onConfirm = { onConfirm(buffer.toIntOrNull()) },
+                    onConfirm = { 
+                        if (isValid) {
+                            onConfirm(buffer.toIntOrNull()) 
+                        } else {
+                            shakeTrigger++
+                        }
+                    },
                     onCancel = onDismiss,
                     modifier = Modifier.fillMaxWidth()
                 )

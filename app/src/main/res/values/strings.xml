@@ -276,6 +276,10 @@
     <string name="log_clear">Clear log</string>
     <string name="log_share">Share logs</string>
     <string name="max_adjustment_limit">Max adjust time is 6h</string>
+    <string name="error_past_time">Resulting time is in the past</string>
+    <string name="error_invalid_timer">Timer duration must be greater than 0</string>
+    <string name="error_invalid_value">Invalid value</string>
+    <string name="error_max_minutes">Max %1$d min</string>
     <string name="settings_section_backup">Backup</string>
     <string name="setting_export">Export Backup</string>
     <string name="setting_export_subtext">Save all settings and alarms to a file</string>

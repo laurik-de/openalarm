@@ -12,6 +12,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import de.laurik.openalarm.ui.theme.bounce
+import de.laurik.openalarm.ui.theme.shake
+import androidx.compose.animation.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,6 +34,10 @@ fun EditTimerDialog(timerPresets: List<Int> = listOf(10, 15, 30), onDismiss: () 
     var snapNext by remember { mutableStateOf(true) }
     // NEW: Trigger state
     var updateTrigger by remember { mutableLongStateOf(0L) }
+    var shakeTrigger by remember { mutableLongStateOf(0L) }
+    
+    val totalSeconds = (hour * 3600) + (minute * 60) + second
+    val isValid = totalSeconds > 0
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         Box(
@@ -57,7 +63,22 @@ fun EditTimerDialog(timerPresets: List<Int> = listOf(10, 15, 30), onDismiss: () 
                                 Text(stringResource(R.string.title_new_timer), style = MaterialTheme.typography.headlineSmall)
                                 Spacer(Modifier.height(16.dp))
 
-                                wheelContent()
+                                Box(Modifier.shake(shakeTrigger)) {
+                                    wheelContent()
+                                }
+                                
+                                AnimatedVisibility(
+                                    visible = !isValid,
+                                    enter = fadeIn() + expandVertically(),
+                                    exit = fadeOut() + shrinkVertically()
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.error_invalid_timer),
+                                        color = MaterialTheme.colorScheme.error,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        modifier = Modifier.padding(top = 8.dp)
+                                    )
+                                }
                                 Spacer(Modifier.height(24.dp))
 
                                 Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
@@ -93,7 +114,13 @@ fun EditTimerDialog(timerPresets: List<Int> = listOf(10, 15, 30), onDismiss: () 
                                     
                                     val confirmIS = remember { MutableInteractionSource() }
                                     Button(
-                                        onClick = { onConfirm((hour * 3600) + (minute * 60) + second) },
+                                        onClick = { 
+                                            if (isValid) {
+                                                onConfirm(totalSeconds) 
+                                            } else {
+                                                shakeTrigger++
+                                            }
+                                        },
                                         modifier = Modifier.weight(1.5f).bounce(confirmIS).height(56.dp),
                                         interactionSource = confirmIS,
                                         shape = MaterialTheme.shapes.medium
