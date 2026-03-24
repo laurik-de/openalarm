@@ -26,6 +26,7 @@
     <string name="header_upcoming">Anstehend</string>
     <string name="header_disabled">Deaktiviert</string>
     <string name="no_alarms_create_one">Keine Wecker. Tippe auf +, um einen hinzuzufügen.</string>
+    <string name="no_active_alarms">Keine aktiven Wecker</string>
     <string name="action_skip_today">Heute überspringen</string>
     <string name="action_deactivate">Deaktivieren</string>
     <string name="action_deactivate_and_delete">Deaktivieren und Löschen</string>
@@ -212,10 +213,12 @@
     <string name="fmt_duration_m">%1$d Min.</string>
     <string name="fmt_duration_s">%1$d Sek.</string>
     <string name="fmt_duration_0s">0 Sek.</string>
-    <string name="fmt_countdown_long">in %1$d Std %2$d Min %3$d Sek</string>
-    <string name="fmt_countdown_short">in %1$d Std %2$d Min</string>
-    <string name="fmt_d_h">%1$d T %2$d Std</string>
+    <string name="fmt_countdown_long">%1$d Std %2$d Min %3$d Sek</string>
+    <string name="fmt_countdown_short">%1$d Std %2$d Min</string>
+    <string name="fmt_d_h">%1$d Tagen %2$d Std</string>
+    <string name="fmt_d_h_m">%1$d Tagen %2$d Std %3$d Min</string>
     <string name="fmt_h_m">%1$d Std %2$d Min</string>
+    <string name="fmt_m_only">%1$d min</string>
     <string name="fmt_m_s">%1$d Min %2$d Sek</string>
     <string name="fmt_s">%1$d Sek</string>
     <string name="fmt_skipped_tomorrow">Morgen %1$s</string>
@@ -227,6 +230,10 @@
     <string name="fmt_minutes_short">%1$dm</string>
     <string name="tts_time_announce">Es ist %1$s</string>
     <string name="fmt_time_printf">%1$02d:%2$02d</string>
+    <string name="fmt_at_time">um %1$s</string>
+    <string name="fmt_tomorrow_at">Morgen um %1$s</string>
+    <string name="fmt_date_at_time">%1$s, %2$02d.%3$02d um %4$s</string>
+    <string name="fmt_alarm_in">Wecker in %1$s</string>
     <string name="fmt_timer_count_up">+ %1$02d:%2$02d</string>
 
     <!-- Settings & Advanced -->
