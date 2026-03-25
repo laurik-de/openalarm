@@ -1,3 +1,9 @@
+## v0.3.0-Alpha (23.03.2026)
+- **updated & improved UI**
+- now uses material 3 expressive design
+- improved timer usage
+- some other minor fixes/improvements
+
 ## v0.2.0-Alpha (01.02.2026)
 - Added feature: Custom Ringtones
 Lets you select files and folders as custom ringtones. Folders and either be played rotationally (alarm wide) or randomly
