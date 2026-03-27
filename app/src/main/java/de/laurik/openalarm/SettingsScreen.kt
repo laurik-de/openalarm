@@ -411,6 +411,17 @@ fun SettingsScreen(
                         color = MaterialTheme.colorScheme.primary
                     )
                     Spacer(Modifier.height(8.dp))
+                    val betaHurdlesEnabled by viewModel.betaHurdlesEnabled.collectAsState()
+                    ListItem(
+                        headlineContent = { Text(stringResource(R.string.settings_beta_hurdles)) },
+                        supportingContent = { Text(stringResource(R.string.settings_beta_hurdles_desc)) },
+                        trailingContent = {
+                            Switch(
+                                checked = betaHurdlesEnabled,
+                                onCheckedChange = { viewModel.setBetaHurdlesEnabled(it) }
+                            )
+                        }
+                    )
 
                     ListItem(
                         headlineContent = { Text(stringResource(R.string.setting_view_logs)) },

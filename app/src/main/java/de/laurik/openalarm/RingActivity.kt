@@ -121,7 +121,8 @@ class RingActivity : ComponentActivity() {
                             AlarmRingingScreen(
                                 alarm = alarm,
                                 onStop = { 
-                                    if (alarm.hurdleEnabled && alarm.selectedHurdles.isNotEmpty()) {
+                                    val betaEnabled = SettingsRepository.getInstance(this@RingActivity).betaHurdlesEnabled.value
+                                    if (betaEnabled && alarm.hurdleEnabled && alarm.selectedHurdles.isNotEmpty()) {
                                         pendingAction = { stopServiceCommand(currentId) }
                                         activeHurdle = alarm.selectedHurdles.random()
                                     } else {
@@ -129,7 +130,8 @@ class RingActivity : ComponentActivity() {
                                     }
                                 },
                                 onSnooze = { mins ->
-                                    if (alarm.hurdleEnabled && alarm.selectedHurdles.isNotEmpty()) {
+                                    val betaEnabled = SettingsRepository.getInstance(this@RingActivity).betaHurdlesEnabled.value
+                                    if (betaEnabled && alarm.hurdleEnabled && alarm.selectedHurdles.isNotEmpty()) {
                                         pendingAction = { 
                                             if (mins == null) snoozeAlarm() 
                                             else snoozeAlarmCustom(mins)
@@ -185,13 +187,18 @@ class RingActivity : ComponentActivity() {
         if (pendingFromNotif != null) { // Added
             lifecycleScope.launch { // Added
                 val alarm = AlarmRepository.getAlarm(currentId) // Modified
-                if (alarm?.hurdleEnabled == true && alarm.selectedHurdles.isNotEmpty()) { // Added
+                val betaEnabled = SettingsRepository.getInstance(this@RingActivity).betaHurdlesEnabled.value
+                if (betaEnabled && alarm?.hurdleEnabled == true && alarm.selectedHurdles.isNotEmpty()) { // Added
                     activeHurdle = alarm.selectedHurdles.random() // Added
                     pendingAction = { // Added
                         if (pendingFromNotif == "STOP") stopServiceCommand(currentId) // Added
                         else if (pendingFromNotif == "SNOOZE") snoozeAlarm() // Added
                     } // Added
-                } // Added
+                } else {
+                    // Logic to handle immediately if hurdles are disabled or none selected
+                    if (pendingFromNotif == "STOP") stopServiceCommand(currentId)
+                    else if (pendingFromNotif == "SNOOZE") snoozeAlarm()
+                }
             } // Added
         } // Added
 

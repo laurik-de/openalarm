@@ -90,6 +90,7 @@ fun EditAlarmDialog(
     val settingsRepo = remember { SettingsRepository.getInstance(context) }
     val globalSnooze by settingsRepo.defaultSnooze.collectAsState(initial = 10)
     val globalAutoStop by settingsRepo.defaultAutoStop.collectAsState(initial = 10)
+    val betaHurdlesEnabled by settingsRepo.betaHurdlesEnabled.collectAsState(initial = false)
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -253,6 +254,7 @@ fun EditAlarmDialog(
                                         onHurdleEnabledChange = { hurdleEnabled = it },
                                         selectedHurdles = selectedHurdles,
                                         onSelectedHurdlesChange = { selectedHurdles = it },
+                                        betaHurdlesEnabled = betaHurdlesEnabled,
                                         globalSnooze = globalSnooze,
                                         globalAutoStop = globalAutoStop
                                     )

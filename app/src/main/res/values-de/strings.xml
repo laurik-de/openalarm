@@ -274,6 +274,8 @@
     <string name="desc_notify_before">Zeigt eine Benachrichtigung eine festgelegte Zeit vor dem Wecktermin an</string>
     <string name="label_notification_time">Benachrichtigungszeit:</string>
     <string name="settings_section_advanced">Erweitert</string>
+    <string name="settings_beta_hurdles">Beta-Hürden aktivieren</string>
+    <string name="settings_beta_hurdles_desc">Ermöglicht die Verwendung experimenteller Hürden für Alarme. Wenn deaktiviert, werden alle aktiven Hürden ignoriert.</string>
     <string name="setting_view_logs">Logs anzeigen</string>
     <string name="setting_view_logs_subtext">Anwendungslogs zur Fehlersuche anzeigen</string>
     <string name="settings_full_screen_permission">Vollbild-Benachrichtigung</string>
