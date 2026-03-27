@@ -1,4 +1,4 @@
-## v0.3.0-Alpha (23.03.2026)
+## v0.3.1-Alpha (27.03.2026)
 - Add heading to alarm screen
 - Improved numpad input
 - Improved strings
