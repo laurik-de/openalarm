@@ -89,7 +89,7 @@ fun GroupCard(
     val useOutline = isSystemDark && !isDefaultColor
 
     val cardColor = if (isDefaultColor) {
-        MaterialTheme.colorScheme.surfaceVariant
+        if (isSystemDark) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant
     } else if (useOutline) {
         // Dark mode: Use surface color, will apply border separately
         MaterialTheme.colorScheme.surface

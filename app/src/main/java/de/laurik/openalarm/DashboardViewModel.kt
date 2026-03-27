@@ -114,7 +114,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     // --- GROUP LOGIC ---
     fun shiftGroup(group: AlarmGroup, minutesOffset: Int) {
         val newOffset = group.offsetMinutes + minutesOffset
-        val entity = AlarmGroupEntity(group.id, group.name, newOffset, group.skippedUntil)
+        val entity = AlarmGroupEntity(group.id, group.name, newOffset, group.skippedUntil, group.colorArgb)
 
         viewModelScope.launch {
             AlarmRepository.updateGroup(context, entity)
@@ -127,7 +127,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun skipGroup(group: AlarmGroup, until: Long) {
-        val entity = AlarmGroupEntity(group.id, group.name, group.offsetMinutes, until)
+        val entity = AlarmGroupEntity(group.id, group.name, group.offsetMinutes, until, group.colorArgb)
         viewModelScope.launch {
             AlarmRepository.updateGroup(context, entity)
             val scheduler = AlarmScheduler(context)
