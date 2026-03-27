@@ -23,15 +23,34 @@ fun SmartTimePickerLayout(
 ) {
     var editingColumn by remember { mutableStateOf(TimeColumn.NONE) }
     var inputBuffer by remember { mutableStateOf("") }
+    var isEditing by remember { mutableStateOf(false) }
+    var initialTime by remember { mutableStateOf<Triple<Int, Int, Int?>>(Triple(hour, minute, seconds)) }
     
+    LaunchedEffect(editingColumn) {
+        if (editingColumn != TimeColumn.NONE && !isEditing) {
+            isEditing = true
+            initialTime = Triple(hour, minute, seconds)
+        } else if (editingColumn == TimeColumn.NONE) {
+            isEditing = false
+        }
+    }
+
     LaunchedEffect(keyboardTrigger) {
         if (keyboardTrigger > 0) {
-            editingColumn = TimeColumn.MINUTE
+            initialTime = Triple(hour, minute, seconds)
+            if (seconds != null) {
+                onTimeChange(0, 0, 0)
+            }
+            editingColumn = if (seconds != null) TimeColumn.SECOND else TimeColumn.MINUTE
             inputBuffer = ""
+            isEditing = true
         }
     }
 
     val onDismissRequest = {
+        if (isEditing) {
+            onTimeChange(initialTime.first, initialTime.second, initialTime.third ?: 0)
+        }
         editingColumn = TimeColumn.NONE
         inputBuffer = ""
         onDismiss()
@@ -129,8 +148,11 @@ fun SmartTimePickerLayout(
             IntegratedNumpad(
                 onInput = { applyInput(it) },
                 onDelete = { applyDelete() },
-                onConfirm = { editingColumn = TimeColumn.NONE; inputBuffer = "" },
-                onCancel = { editingColumn = TimeColumn.NONE; inputBuffer = "" },
+                onConfirm = { 
+                    editingColumn = TimeColumn.NONE
+                    inputBuffer = "" 
+                },
+                onCancel = onDismissRequest,
                 modifier = Modifier.fillMaxWidth().height(280.dp)
             )
         }

@@ -143,7 +143,7 @@ object AlarmRepository {
             val db = AppDatabase.getDatabase(context).alarmDao()
             val groups = db.getAllGroups()
             if (groups.none { it.id == alarm.groupId }) {
-                db.insertGroup(AlarmGroupEntity(id="default", name="Default"))
+                db.insertGroup(AlarmGroupEntity(id="default", name="Default", colorArgb=0xFFFFFFFF.toInt()))
             }
             db.insertAlarm(alarm)
         }

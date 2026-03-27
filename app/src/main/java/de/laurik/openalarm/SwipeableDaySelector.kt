@@ -33,13 +33,13 @@ fun SwipeableDaySelector(
 ) {
     // 1=Mon ... 7=Sun
     val daysData = listOf(
-        Triple(1, stringResource(R.string.day_mon_short), stringResource(R.string.day_monday)),
-        Triple(2, stringResource(R.string.day_tue_short), stringResource(R.string.day_tuesday)),
-        Triple(3, stringResource(R.string.day_wed_short), stringResource(R.string.day_wednesday)),
-        Triple(4, stringResource(R.string.day_thu_short), stringResource(R.string.day_thursday)),
-        Triple(5, stringResource(R.string.day_fri_short), stringResource(R.string.day_friday)),
-        Triple(6, stringResource(R.string.day_sat_short), stringResource(R.string.day_saturday)),
-        Triple(7, stringResource(R.string.day_sun_short), stringResource(R.string.day_sunday))
+        Triple(1, stringResource(R.string.day_mon_mini), stringResource(R.string.day_monday)),
+        Triple(2, stringResource(R.string.day_tue_mini), stringResource(R.string.day_tuesday)),
+        Triple(3, stringResource(R.string.day_wed_mini), stringResource(R.string.day_wednesday)),
+        Triple(4, stringResource(R.string.day_thu_mini), stringResource(R.string.day_thursday)),
+        Triple(5, stringResource(R.string.day_fri_mini), stringResource(R.string.day_friday)),
+        Triple(6, stringResource(R.string.day_sat_mini), stringResource(R.string.day_saturday)),
+        Triple(7, stringResource(R.string.day_sun_mini), stringResource(R.string.day_sunday))
     )
 
     // Layout State

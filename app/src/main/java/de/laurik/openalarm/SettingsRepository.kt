@@ -109,6 +109,12 @@ class SettingsRepository(context: Context) {
     private val _notifyBeforeMinutes = MutableStateFlow(prefs.getInt("notify_before_minutes", 120)) // Default 2 hours
     val notifyBeforeMinutes: StateFlow<Int> = _notifyBeforeMinutes.asStateFlow()
 
+    private val _fullScreenPermissionShown = MutableStateFlow(prefs.getBoolean("full_screen_permission_shown", false))
+    val fullScreenPermissionShown: StateFlow<Boolean> = _fullScreenPermissionShown.asStateFlow()
+
+    private val _betaHurdlesEnabled = MutableStateFlow(prefs.getBoolean("beta_hurdles_enabled", false))
+    val betaHurdlesEnabled: StateFlow<Boolean> = _betaHurdlesEnabled.asStateFlow()
+
     fun refreshAll() {
         _themeMode.value = getVideoThemeMode()
         _isPureBlack.value = prefs.getBoolean("is_pure_black", false)
@@ -141,6 +147,8 @@ class SettingsRepository(context: Context) {
         _defSelectedHurdles.value = getHurdleTypeList("def_selected_hurdles", emptyList())
         _notifyBeforeEnabled.value = prefs.getBoolean("notify_before_enabled", true)
         _notifyBeforeMinutes.value = prefs.getInt("notify_before_minutes", 120)
+        _fullScreenPermissionShown.value = prefs.getBoolean("full_screen_permission_shown", false)
+        _betaHurdlesEnabled.value = prefs.getBoolean("beta_hurdles_enabled", false)
     }
 
     private fun getRingingMode(key: String, default: RingingScreenMode): RingingScreenMode {
@@ -328,6 +336,16 @@ class SettingsRepository(context: Context) {
     fun setNotifyBeforeMinutes(minutes: Int) {
         prefs.edit().putInt("notify_before_minutes", minutes).apply()
         _notifyBeforeMinutes.value = minutes
+    }
+
+    fun setFullScreenPermissionShown(shown: Boolean) {
+        prefs.edit().putBoolean("full_screen_permission_shown", shown).apply()
+        _fullScreenPermissionShown.value = shown
+    }
+
+    fun setBetaHurdlesEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("beta_hurdles_enabled", enabled).apply()
+        _betaHurdlesEnabled.value = enabled
     }
 
     private fun getIntList(key: String, default: List<Int>): List<Int> {

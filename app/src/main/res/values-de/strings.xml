@@ -26,6 +26,7 @@
     <string name="header_upcoming">Anstehend</string>
     <string name="header_disabled">Deaktiviert</string>
     <string name="no_alarms_create_one">Keine Wecker. Tippe auf +, um einen hinzuzufügen.</string>
+    <string name="no_active_alarms">Keine aktiven Wecker</string>
     <string name="action_skip_today">Heute überspringen</string>
     <string name="action_deactivate">Deaktivieren</string>
     <string name="action_deactivate_and_delete">Deaktivieren und Löschen</string>
@@ -44,7 +45,7 @@
     <string name="menu_clear_skip">Wecker fortsetzen (Skip löschen)</string>
     <string name="alarmlist_empty">Leer</string>
     <string name="edit_group">Gruppe bearbeiten</string>
-    <string name="next_time_group">Nächster: %1$s</string>
+    <string name="next_time_group">in %1$s</string>
     <string name="dialog_title_adjust_group_time">Gruppenzeit anpassen</string>
     <string name="adjust_group_time">Nächste Weckzeit für alle Wecker der Gruppe anpassen</string>
     <string name="adjust_all_count_alarms">Passt alle %1$s aktiven Wecker an</string>
@@ -190,13 +191,20 @@
     <string name="label_earlier">Früher</string>
 
     <!-- Date, Time & Formats -->
-    <string name="day_mon_short">M</string>
-    <string name="day_tue_short">D</string>
-    <string name="day_wed_short">M</string>
-    <string name="day_thu_short">D</string>
-    <string name="day_fri_short">F</string>
-    <string name="day_sat_short">S</string>
-    <string name="day_sun_short">S</string>
+    <string name="day_mon_mini">M</string>
+    <string name="day_tue_mini">D</string>
+    <string name="day_wed_mini">M</string>
+    <string name="day_thu_mini">D</string>
+    <string name="day_fri_mini">F</string>
+    <string name="day_sat_mini">S</string>
+    <string name="day_sun_mini">S</string>
+    <string name="day_mon_short">Mo</string>
+    <string name="day_tue_short">Di</string>
+    <string name="day_wed_short">Mi</string>
+    <string name="day_thu_short">Do</string>
+    <string name="day_fri_short">Fr</string>
+    <string name="day_sat_short">Sa</string>
+    <string name="day_sun_short">So</string>
     <string name="day_monday">Montag</string>
     <string name="day_tuesday">Dienstag</string>
     <string name="day_wednesday">Mittwoch</string>
@@ -204,7 +212,7 @@
     <string name="day_friday">Freitag</string>
     <string name="day_saturday">Samstag</string>
     <string name="day_sunday">Sonntag</string>
-    <string name="repeat_weekdays">Wochentage</string>
+    <string name="repeat_weekdays">Wochentags</string>
     <string name="repeat_weekends">Wochenende</string>
     <string name="repeat_every_day">Jeden Tag</string>
     <string name="repeat_once">Einmal</string>
@@ -212,22 +220,31 @@
     <string name="fmt_duration_m">%1$d Min.</string>
     <string name="fmt_duration_s">%1$d Sek.</string>
     <string name="fmt_duration_0s">0 Sek.</string>
-    <string name="fmt_countdown_long">in %1$d Std %2$d Min %3$d Sek</string>
-    <string name="fmt_countdown_short">in %1$d Std %2$d Min</string>
-    <string name="fmt_d_h">%1$d T %2$d Std</string>
+    <string name="fmt_countdown_long">%1$d Std %2$d Min %3$d Sek</string>
+    <string name="fmt_countdown_short">%1$d Std %2$d Min</string>
+    <string name="fmt_d_h">%1$d Tagen %2$d Std</string>
+    <string name="fmt_d_h_m">%1$d Tagen %2$d Std %3$d Min</string>
     <string name="fmt_h_m">%1$d Std %2$d Min</string>
+    <string name="fmt_m_only">%1$d min</string>
     <string name="fmt_m_s">%1$d Min %2$d Sek</string>
     <string name="fmt_s">%1$d Sek</string>
-    <string name="fmt_skipped_tomorrow">Morgen %1$s</string>
-    <string name="fmt_skipped_short">%1$s %2$s</string>
-    <string name="fmt_skipped_long">%1$s %2$d.%3$d. %4$s</string>
+    <string name="fmt_skipped_tomorrow">Morgen</string>
+    <string name="fmt_skipped_short">%1$s</string>
+    <string name="fmt_skipped_long">%1$s %2$d.%3$d.</string>
     <string name="status_skipped_tomorrow">Morgen übersprungen</string>
     <string name="status_skipped_until">Übersprungen bis %1$s</string>
     <string name="label_minutes_fmt">%1$d Min.</string>
     <string name="fmt_minutes_short">%1$dm</string>
     <string name="tts_time_announce">Es ist %1$s</string>
     <string name="fmt_time_printf">%1$02d:%2$02d</string>
+    <string name="fmt_at_time">um %1$s</string>
+    <string name="fmt_tomorrow_at">Morgen um %1$s</string>
+    <string name="fmt_date_at_time">%1$s, %2$02d.%3$02d um %4$s</string>
+    <string name="fmt_alarm_in">Wecker in %1$s</string>
     <string name="fmt_timer_count_up">+ %1$02d:%2$02d</string>
+    <string name="label_hour_short">Std.</string>
+    <string name="label_minute_short">Min.</string>
+    <string name="label_second_short">Sek.</string>
 
     <!-- Settings & Advanced -->
     <string name="title_settings">Einstellungen</string>
@@ -267,8 +284,13 @@
     <string name="desc_notify_before">Zeigt eine Benachrichtigung eine festgelegte Zeit vor dem Wecktermin an</string>
     <string name="label_notification_time">Benachrichtigungszeit:</string>
     <string name="settings_section_advanced">Erweitert</string>
+    <string name="settings_beta_hurdles">Beta-Hürden aktivieren</string>
+    <string name="settings_beta_hurdles_desc">Ermöglicht die Verwendung experimenteller Hürden für Alarme. Wenn deaktiviert, werden alle aktiven Hürden ignoriert.</string>
     <string name="setting_view_logs">Logs anzeigen</string>
     <string name="setting_view_logs_subtext">Anwendungslogs zur Fehlersuche anzeigen</string>
+    <string name="settings_full_screen_permission">Vollbild-Benachrichtigung</string>
+    <string name="settings_full_screen_permission_desc">Sicherstellen, dass der Wecker über anderen Apps erscheinen kann</string>
+    <string name="settings_full_screen_permission_reopen">Einrichtungsnachricht anzeigen</string>
     <string name="log_viewer_title">Anwendungslogs</string>
     <string name="log_search_placeholder">Logs durchsuchen</string>
     <string name="log_no_entries">Nichts gefunden</string>

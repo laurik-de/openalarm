@@ -115,13 +115,64 @@ fun WheelTimePicker(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                WheelColumn(hourState, 24, (activeColumn == TimeColumn.HOUR || !isEditing), isEditing, if (activeColumn == TimeColumn.HOUR) inputBuffer else null, { onColumnClick(TimeColumn.HOUR) }, Modifier.weight(1f))
-                Text(":", fontSize = 40.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(bottom = 6.dp))
-                WheelColumn(minuteState, 60, (activeColumn == TimeColumn.MINUTE || !isEditing), isEditing, if (activeColumn == TimeColumn.MINUTE) inputBuffer else null, { onColumnClick(TimeColumn.MINUTE) }, Modifier.weight(1f))
+                val labelStyle = MaterialTheme.typography.labelMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f)
+                )
+
+                // HOURS
+                Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                        WheelColumn(hourState, 24, (activeColumn == TimeColumn.HOUR || !isEditing), isEditing, if (activeColumn == TimeColumn.HOUR) inputBuffer else null, { onColumnClick(TimeColumn.HOUR) }, Modifier.fillMaxWidth())
+                    }
+                    if (isEditing) {
+                        Text(androidx.compose.ui.res.stringResource(R.string.label_hour_short), style = labelStyle)
+                        Spacer(Modifier.height(12.dp))
+                    }
+                }
+
+                // COLON 1
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                        Text(":", fontSize = 40.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(bottom = 6.dp))
+                    }
+                    if (isEditing) {
+                        Spacer(Modifier.height(28.dp)) // Height of label + Spacer
+                    }
+                }
+
+                // MINUTES
+                Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                        WheelColumn(minuteState, 60, (activeColumn == TimeColumn.MINUTE || !isEditing), isEditing, if (activeColumn == TimeColumn.MINUTE) inputBuffer else null, { onColumnClick(TimeColumn.MINUTE) }, Modifier.fillMaxWidth())
+                    }
+                    if (isEditing) {
+                        Text(androidx.compose.ui.res.stringResource(R.string.label_minute_short), style = labelStyle)
+                        Spacer(Modifier.height(12.dp))
+                    }
+                }
 
                 if (seconds != null) {
-                    Text(":", fontSize = 40.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(bottom = 6.dp))
-                    WheelColumn(secondState, 60, (activeColumn == TimeColumn.SECOND || !isEditing), isEditing, if (activeColumn == TimeColumn.SECOND) inputBuffer else null, { onColumnClick(TimeColumn.SECOND) }, Modifier.weight(1f))
+                    // COLON 2
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                            Text(":", fontSize = 40.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(bottom = 6.dp))
+                        }
+                        if (isEditing) {
+                            Spacer(Modifier.height(28.dp))
+                        }
+                    }
+
+                    // SECONDS
+                    Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                            WheelColumn(secondState, 60, (activeColumn == TimeColumn.SECOND || !isEditing), isEditing, if (activeColumn == TimeColumn.SECOND) inputBuffer else null, { onColumnClick(TimeColumn.SECOND) }, Modifier.fillMaxWidth())
+                        }
+                        if (isEditing) {
+                            Text(androidx.compose.ui.res.stringResource(R.string.label_second_short), style = labelStyle)
+                            Spacer(Modifier.height(12.dp))
+                        }
+                    }
                 }
             }
         }
@@ -198,11 +249,31 @@ fun WheelColumn(
                 if (isCompact && isFocused && page == state.currentPage) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         val color = MaterialTheme.colorScheme.primary
-                        val char1 = editDisplay?.getOrNull(0)?.toString() ?: "_"
-                        Text(char1, fontSize = 48.sp, fontWeight = FontWeight.Bold, color = color)
+                        
+                        val char1: String
+                        val char2: String
+                        val char1Color: androidx.compose.ui.graphics.Color
+                        val char2Color: androidx.compose.ui.graphics.Color
+                        
+                        if (editDisplay.isNullOrEmpty()) {
+                            char1 = "_"
+                            char2 = "_"
+                            char1Color = color
+                            char2Color = color
+                        } else if (editDisplay.length == 1) {
+                            char1 = "_"
+                            char2 = editDisplay
+                            char1Color = color
+                            char2Color = color
+                        } else {
+                            char1 = editDisplay[0].toString()
+                            char2 = editDisplay[1].toString()
+                            char1Color = color
+                            char2Color = color
+                        }
+
+                        Text(char1, fontSize = 48.sp, fontWeight = FontWeight.Bold, color = char1Color)
                         Spacer(Modifier.width(2.dp))
-                        val char2 = editDisplay?.getOrNull(1)?.toString() ?: "_"
-                        val char2Color = if (editDisplay?.length == 1) color.copy(alpha=0.5f) else color
                         Text(char2, fontSize = 48.sp, fontWeight = FontWeight.Bold, color = char2Color)
                     }
                 } else {

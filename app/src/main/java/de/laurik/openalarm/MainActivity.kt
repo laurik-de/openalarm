@@ -58,10 +58,19 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.background
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.BiasAlignment
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.sp
 import de.laurik.openalarm.ui.theme.bounceClickable
 
@@ -119,7 +128,7 @@ class MainActivity : ComponentActivity() {
 
             de.laurik.openalarm.ui.theme.OpenAlarmTheme(themeMode = themeMode, isPureBlack = isPureBlack) {
                 MainContent(settingsViewModel, pagerState)
-                CheckSystemPermissions()
+                CheckSystemPermissions(settingsViewModel)
             }
         }
     }
@@ -210,7 +219,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun CheckSystemPermissions() {
+fun CheckSystemPermissions(viewModel: SettingsViewModel) {
     val context = LocalContext.current
     val packageName = context.packageName
 
@@ -234,7 +243,7 @@ fun CheckSystemPermissions() {
         // Android 14 full screen intent property
         if (Build.VERSION.SDK_INT >= 34) {
             val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            if (!nm.canUseFullScreenIntent()) {
+            if (!nm.canUseFullScreenIntent() && !viewModel.fullScreenPermissionShown.value) {
                 showFullScreenDialog = true
             }
         }
@@ -272,12 +281,16 @@ fun CheckSystemPermissions() {
 
     if (showFullScreenDialog) {
         AlertDialog(
-            onDismissRequest = { showFullScreenDialog = false },
+            onDismissRequest = { 
+                showFullScreenDialog = false 
+                viewModel.setFullScreenPermissionShown(true)
+            },
             title = { Text(stringResource(R.string.dialog_title_permission_required)) },
             text = { Text(stringResource(R.string.dialog_msg_permission_full_screen)) },
             confirmButton = {
                 TextButton(onClick = {
                     showFullScreenDialog = false
+                    viewModel.setFullScreenPermissionShown(true)
                     if (Build.VERSION.SDK_INT >= 34) {
                         val intent = Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT).apply {
                             data = Uri.parse("package:$packageName")
@@ -287,7 +300,10 @@ fun CheckSystemPermissions() {
                 }) { Text(stringResource(R.string.action_grant)) }
             },
             dismissButton = {
-                TextButton(onClick = { showFullScreenDialog = false }) { Text(stringResource(R.string.action_cancel)) }
+                TextButton(onClick = { 
+                    showFullScreenDialog = false 
+                    viewModel.setFullScreenPermissionShown(true)
+                }) { Text(stringResource(R.string.action_cancel)) }
             }
         )
     }
@@ -472,6 +488,86 @@ fun MainContent(settingsViewModel: SettingsViewModel, pagerState: PagerState) {
         }
     }
 }
+@Composable
+fun ReachabilityHeader(nextAlarm: NextAlarmInfo?, expansionProgress: Float) {
+    val alpha = 1f
+    val nextAlarmAlpha = (expansionProgress * 2f - 1f).coerceIn(0f, 1f)
+    val scale = 0.75f + (0.25f * expansionProgress)
+    val warp = 1f + (0.05f * (1f - expansionProgress))
+
+    val horizontalBias = -1f + (1f * expansionProgress)
+    val verticalBias = -1f + (0.7f * expansionProgress) 
+    val alignment = BiasAlignment(horizontalBias, verticalBias)
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(maxOf(72.dp, 240.dp * expansionProgress))
+            .statusBarsPadding()
+    ) {
+        // App Name - Permanent
+        Text(
+            text = stringResource(R.string.app_name),
+            style = MaterialTheme.typography.displaySmall.copy(
+                platformStyle = PlatformTextStyle(includeFontPadding = false),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Start
+            ),
+            fontWeight = FontWeight.Black,
+            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f),
+            modifier = Modifier
+                .align(alignment)
+                .wrapContentHeight(unbounded = true) // Crucial to prevent descender clipping
+                .graphicsLayer {
+                    this.scaleX = scale * warp
+                    this.scaleY = scale
+                    this.transformOrigin = TransformOrigin(0f, 0f)
+                }
+        )
+        
+        // Next Alarm Info - Only visible when expanded
+        if (expansionProgress > 0.5f) {
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .graphicsLayer { this.alpha = nextAlarmAlpha }
+                    .padding(bottom = 20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                if (nextAlarm == null) {
+                    Text(
+                        text = stringResource(R.string.no_active_alarms),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    // Top Line: Count Down (Primary)
+                    Text(
+                        text = stringResource(R.string.fmt_alarm_in, nextAlarm.countdownString),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    
+                    Spacer(modifier = Modifier.height(2.dp))
+                    
+                    // Bottom Line: Contextual Info (Secondary)
+                    Text(
+                        text = buildString {
+                            // "At/Um [Time/Date]"
+                            append(nextAlarm.timeString)
+                            if (!nextAlarm.label.isNullOrBlank()) {
+                                append("  •  ")
+                                append(nextAlarm.label)
+                            }
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                    )
+                }
+            }
+        }
+    }
+}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -492,6 +588,54 @@ fun AlarmScreen(
     var isCreatingNew by remember { mutableStateOf(false) }
     var showDatePickerForAlarm by remember { mutableStateOf<AlarmItem?>(null) }
     var showDatePickerForGroup by remember { mutableStateOf<AlarmGroup?>(null) }
+
+    // Reachability Expansion State
+    val expansion = remember { androidx.compose.animation.core.Animatable(1f) }
+    val scope = rememberCoroutineScope()
+    val scrollState = rememberLazyListState()
+
+    // Detect scroll to contract/expand
+    val nestedScrollConnection = remember {
+        object : androidx.compose.ui.input.nestedscroll.NestedScrollConnection {
+            override fun onPreScroll(available: androidx.compose.ui.geometry.Offset, source: androidx.compose.ui.input.nestedscroll.NestedScrollSource): androidx.compose.ui.geometry.Offset {
+                // If scrolling down the list (available.y < 0) and header is expanded, contract it
+                if (expansion.value > 0f && available.y < 0) {
+                    val delta = available.y / 500f
+                    scope.launch {
+                        expansion.snapTo((expansion.value + delta).coerceIn(0f, 1f))
+                    }
+                    // Consume only if we are still contracting
+                    return if (expansion.value > 0f) available.copy(x = 0f) else androidx.compose.ui.geometry.Offset.Zero
+                }
+                return super.onPreScroll(available, source)
+            }
+
+            override fun onPostScroll(
+                consumed: androidx.compose.ui.geometry.Offset,
+                available: androidx.compose.ui.geometry.Offset,
+                source: androidx.compose.ui.input.nestedscroll.NestedScrollSource
+            ): androidx.compose.ui.geometry.Offset {
+                // If scrolling up the list (available.y > 0) and at top, expand it
+                if (available.y > 0 && scrollState.firstVisibleItemIndex == 0 && scrollState.firstVisibleItemScrollOffset == 0) {
+                    val delta = available.y / 500f
+                    scope.launch {
+                        expansion.snapTo((expansion.value + delta).coerceIn(0f, 1f))
+                    }
+                    return available
+                }
+                return super.onPostScroll(consumed, available, source)
+            }
+
+            override suspend fun onPostFling(consumed: androidx.compose.ui.unit.Velocity, available: androidx.compose.ui.unit.Velocity): androidx.compose.ui.unit.Velocity {
+                if (expansion.value > 0.5f) {
+                    expansion.animateTo(1f, spring(stiffness = Spring.StiffnessLow))
+                } else {
+                    expansion.animateTo(0f, spring(stiffness = Spring.StiffnessLow))
+                }
+                return super.onPostFling(consumed, available)
+            }
+        }
+    }
 
     // FAB Trigger Handling
     LaunchedEffect(triggerCreateAlarm) {
@@ -566,17 +710,25 @@ fun AlarmScreen(
     // Actually, I'll move the FAB back into AlarmScreen for now, OR pass a lambda.
     // The request says "only the fab on the bottom right".
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier
+        .fillMaxSize()
+        .nestedScroll(nestedScrollConnection)
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
+            // REACHABILITY HEADER
+            val nextAlarm = AlarmUtils.getNextAlarm(context)
+            ReachabilityHeader(nextAlarm, expansion.value)
 
             // --- MAIN LIST ---
-            LazyColumn(modifier = Modifier.weight(1f)) {
+            LazyColumn(
+                state = scrollState,
+                modifier = Modifier.weight(1f)
+            ) {
 
                 // 1. UNGROUPED ALARMS
                 if (flatAlarms.isNotEmpty()) {

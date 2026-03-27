@@ -6,6 +6,7 @@ import java.time.temporal.ChronoUnit
 import java.util.Calendar
 
 data class NextAlarmInfo(
+    val label: String?,
     val timeString: String,
     val countdownString: String,
     val timestamp: Long,
@@ -117,12 +118,10 @@ object AlarmUtils {
         val target = Instant.ofEpochMilli(timestamp).atZone(zoneId).toLocalDateTime()
         val now = LocalDateTime.now(zoneId)
 
-        val timeStr = String.format("%02d:%02d", target.hour, target.minute)
-
         // Check if tomorrow using ChronoUnit for accuracy
         val daysBetween = ChronoUnit.DAYS.between(now.toLocalDate(), target.toLocalDate())
 
-        if (daysBetween == 1L) return context.getString(R.string.fmt_skipped_tomorrow, timeStr)
+        if (daysBetween == 1L) return context.getString(R.string.fmt_skipped_tomorrow)
 
         // Format Day Name
         val dayName = when(target.dayOfWeek) {
@@ -136,9 +135,9 @@ object AlarmUtils {
         }
 
         return if (daysBetween < 7) {
-            context.getString(R.string.fmt_skipped_short, dayName, timeStr)
+            context.getString(R.string.fmt_skipped_short, dayName)
         } else {
-            context.getString(R.string.fmt_skipped_long, dayName, target.dayOfMonth, target.monthValue, timeStr)
+            context.getString(R.string.fmt_skipped_long, dayName, target.dayOfMonth, target.monthValue)
         }
     }
 
@@ -147,16 +146,16 @@ object AlarmUtils {
         if (diff <= 0) return context.getString(R.string.status_ringing_soon)
 
         val seconds = diff / 1000
-        val days = seconds / (24 * 3600)
-        val hours = (seconds % (24 * 3600)) / 3600
-        val mins = (seconds % 3600) / 60
-        val secs = seconds % 60
+        val d = seconds / (24 * 3600)
+        val h = (seconds % (24 * 3600)) / 3600
+        val m = (seconds % 3600) / 60
+        val s = seconds % 60
 
         return when {
-            days > 0 -> context.getString(R.string.fmt_d_h, days, hours)
-            hours > 0 -> context.getString(R.string.fmt_h_m, hours, mins)
-            mins > 0 -> context.getString(R.string.fmt_m_s, mins, secs)
-            else -> context.getString(R.string.fmt_s, secs)
+            d > 0 -> context.getString(R.string.fmt_d_h, d, h)
+            h > 0 -> context.getString(R.string.fmt_h_m, h, m)
+            m >= 10 -> context.getString(R.string.fmt_m_only, m)
+            else -> context.getString(R.string.fmt_m_s, m, s)
         }
     }
 
@@ -175,6 +174,7 @@ object AlarmUtils {
         var nextAlarmTime: Long? = null
         var isSingleUse = false
         var isSelfDestroying = false
+        var nextLabel: String? = null
 
         for (group in AlarmRepository.groups) {
             for (alarm in group.alarms) {
@@ -193,6 +193,7 @@ object AlarmUtils {
                     nextAlarmTime = effectiveTime
                     isSingleUse = alarm.isSingleUse
                     isSelfDestroying = alarm.isSelfDestroying
+                    nextLabel = alarm.label
                 }
             }
         }
@@ -200,18 +201,40 @@ object AlarmUtils {
         if (nextAlarmTime == null) return null
 
         val cNext = Calendar.getInstance().apply { timeInMillis = nextAlarmTime }
+        
+        // Improve Time Formatting: Add Day if more than 24h away
+        val zoneId = ZoneId.systemDefault()
+        val targetDate = Instant.ofEpochMilli(nextAlarmTime).atZone(zoneId).toLocalDate()
+        val nowDate = LocalDate.now(zoneId)
+        val daysBetween = ChronoUnit.DAYS.between(nowDate, targetDate)
         val timeStr = String.format("%02d:%02d", cNext.get(Calendar.HOUR_OF_DAY), cNext.get(Calendar.MINUTE))
-        val hoursLeft = minDiff / (1000 * 60 * 60)
-        val minsLeft = (minDiff / (1000 * 60)) % 60
-        val secondsLeft = (minDiff / 1000) % 60
 
-        val countdownStr = if (minDiff < 8 * 60 * 1000) {
-            context.getString(R.string.fmt_countdown_long, hoursLeft, minsLeft, secondsLeft)
-        } else {
-            context.getString(R.string.fmt_countdown_short, hoursLeft, minsLeft)
+        val timeString = when (daysBetween) {
+            0L -> context.getString(R.string.fmt_at_time, timeStr)
+            1L -> context.getString(R.string.fmt_tomorrow_at, timeStr)
+            else -> {
+                val dayFull = when(targetDate.dayOfWeek) {
+                    DayOfWeek.MONDAY -> context.getString(R.string.day_monday)
+                    DayOfWeek.TUESDAY -> context.getString(R.string.day_tuesday)
+                    DayOfWeek.WEDNESDAY -> context.getString(R.string.day_wednesday)
+                    DayOfWeek.THURSDAY -> context.getString(R.string.day_thursday)
+                    DayOfWeek.FRIDAY -> context.getString(R.string.day_friday)
+                    DayOfWeek.SATURDAY -> context.getString(R.string.day_saturday)
+                    DayOfWeek.SUNDAY -> context.getString(R.string.day_sunday)
+                }
+                context.getString(R.string.fmt_date_at_time, 
+                    dayFull, targetDate.dayOfMonth, targetDate.monthValue, timeStr)
+            }
         }
 
-        return NextAlarmInfo(timeStr, countdownStr, nextAlarmTime, isSingleUse, isSelfDestroying)
+        return NextAlarmInfo(
+            label = nextLabel,
+            timeString = timeString,
+            countdownString = getTimeUntilString(context, nextAlarmTime),
+            timestamp = nextAlarmTime,
+            isSingleUse = isSingleUse,
+            isSelfDestroying = isSelfDestroying
+        )
     }
 
     // Kept for backward compatibility if any older layouts use it

@@ -82,6 +82,8 @@ fun AlarmConfigSection(
     selectedHurdles: List<HurdleType>,
     onSelectedHurdlesChange: (List<HurdleType>) -> Unit,
 
+    betaHurdlesEnabled: Boolean,
+
     showRingingMode: Boolean = true,
     showDefaultRingingMode: Boolean = false,
     
@@ -405,61 +407,68 @@ fun AlarmConfigSection(
             modifier = Modifier.bounceClickable(indication = LocalIndication.current) { onBackgroundTypeChange(backgroundType) }
         )
 
-        HorizontalDivider()
+        if (betaHurdlesEnabled) {
+            HorizontalDivider()
 
-        // 6. HURDLES
-        Text(
-            stringResource(R.string.section_hurdles) + stringResource(R.string.label_hurdle_beta),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(vertical = 12.dp)
-        )
+            // 6. HURDLES
+            Text(
+                stringResource(R.string.section_hurdles) + stringResource(R.string.label_hurdle_beta),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(vertical = 12.dp)
+            )
 
-        ListItem(
-            headlineContent = { Text(stringResource(R.string.setting_hurdle_enabled)) },
-            supportingContent = { Text(stringResource(R.string.setting_hurdle_enabled_desc)) },
-            trailingContent = { Switch(checked = hurdleEnabled, onCheckedChange = onHurdleEnabledChange) }
-        )
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.setting_hurdle_enabled)) },
+                supportingContent = { Text(stringResource(R.string.setting_hurdle_enabled_desc)) },
+                trailingContent = {
+                    Switch(
+                        checked = hurdleEnabled,
+                        onCheckedChange = onHurdleEnabledChange
+                    )
+                }
+            )
 
-        AnimatedVisibility(visible = hurdleEnabled) {
-            Column(Modifier.padding(horizontal = 16.dp)) {
-                Text(
-                    stringResource(R.string.label_select_hurdles),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                
-                HurdleType.entries.filter { it != HurdleType.GAME }.forEach { type ->
-                    val labelId = when(type) {
-                        HurdleType.DAY_OF_WEEK -> R.string.hurdle_day_of_week
-                        HurdleType.MATH_EASY -> R.string.hurdle_math_easy
-                        HurdleType.MATH_MEDIUM -> R.string.hurdle_math_medium
-                        HurdleType.MATH_DIFFICULT -> R.string.hurdle_math_difficult
-                        HurdleType.GAME -> R.string.hurdle_game
-                    }
-                    
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Checkbox(
-                            checked = selectedHurdles.contains(type),
-                            onCheckedChange = { checked ->
-                                val newList = if (checked) {
-                                    selectedHurdles + type
-                                } else {
-                                    selectedHurdles.filter { it != type }
+            AnimatedVisibility(visible = hurdleEnabled) {
+                Column(Modifier.padding(horizontal = 16.dp)) {
+                    Text(
+                        stringResource(R.string.label_select_hurdles),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+
+                    HurdleType.entries.filter { it != HurdleType.GAME }.forEach { type ->
+                        val labelId = when (type) {
+                            HurdleType.DAY_OF_WEEK -> R.string.hurdle_day_of_week
+                            HurdleType.MATH_EASY -> R.string.hurdle_math_easy
+                            HurdleType.MATH_MEDIUM -> R.string.hurdle_math_medium
+                            HurdleType.MATH_DIFFICULT -> R.string.hurdle_math_difficult
+                            HurdleType.GAME -> R.string.hurdle_game
+                        }
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(
+                                checked = selectedHurdles.contains(type),
+                                onCheckedChange = { checked ->
+                                    val newList = if (checked) {
+                                        selectedHurdles + type
+                                    } else {
+                                        selectedHurdles.filter { it != type }
+                                    }
+                                    onSelectedHurdlesChange(newList)
                                 }
-                                onSelectedHurdlesChange(newList)
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Text(stringResource(labelId), modifier = Modifier.weight(1f))
+                            IconButton(onClick = { testingHurdle = type }) {
+                                Icon(Icons.Default.PlayArrow, contentDescription = "Test")
                             }
-                        )
-                        Spacer(Modifier.width(12.dp))
-                        Text(stringResource(labelId), modifier = Modifier.weight(1f))
-                        IconButton(onClick = { testingHurdle = type }) {
-                            Icon(Icons.Default.PlayArrow, contentDescription = "Test")
                         }
                     }
                 }

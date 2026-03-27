@@ -15,8 +15,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import de.laurik.openalarm.ui.theme.bounce
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import de.laurik.openalarm.ui.theme.shake
+import androidx.compose.animation.*
+import androidx.compose.runtime.mutableLongStateOf
+import de.laurik.openalarm.ui.theme.bounce
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -59,6 +62,8 @@ fun QuickAdjustDialog(
         else AlarmUtils.formatMinutes(context, inputMinutes)
     }
 
+    var shakeTrigger by remember { mutableLongStateOf(0L) }
+    
     val isValid = remember(inputMinutes, isDelay, currentNextTime) {
         if (inputMinutes == 0) false
         else if (inputMinutes > 6 * 60) false // Max 6h constraint
@@ -68,6 +73,15 @@ fun QuickAdjustDialog(
             val target = currentNextTime + (delta * 60 * 1000L)
             target > System.currentTimeMillis()
         } else true // No base time validation possible (e.g. group)
+    }
+
+    val errorReason = remember(inputMinutes, isDelay, currentNextTime) {
+        if (inputMinutes > 6 * 60) context.getString(R.string.max_adjustment_limit)
+        else if (currentNextTime > 0) {
+            val delta = if (isDelay) inputMinutes else -inputMinutes
+            val target = currentNextTime + (delta * 60 * 1000L)
+            if (target <= System.currentTimeMillis() && inputMinutes > 0) context.getString(R.string.error_past_time) else null
+        } else null
     }
 
     Dialog(onDismissRequest = onDismiss) {
@@ -96,7 +110,7 @@ fun QuickAdjustDialog(
                     }
                 }
 
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.shake(shakeTrigger)) {
                     Text(
                         text = targetDisplay, 
                         style = MaterialTheme.typography.displayMedium, 
@@ -118,6 +132,20 @@ fun QuickAdjustDialog(
                     } else {
                         // Placeholder to maintain layout stability
                         Text("", style = MaterialTheme.typography.titleMedium)
+                    }
+
+                    // ERROR MESSAGE
+                    AnimatedVisibility(
+                        visible = errorReason != null && isCustomMode,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        Text(
+                            text = errorReason ?: "",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.labelMedium,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
                     }
                 }
 
@@ -200,6 +228,8 @@ fun QuickAdjustDialog(
                                 if (isValid) {
                                     val delta = if (isDelay) inputMinutes else -inputMinutes
                                     onAdjust(delta)
+                                } else {
+                                    shakeTrigger++
                                 }
                             },
                             onCancel = { isCustomMode = false }, // Go back to presets

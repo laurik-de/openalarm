@@ -26,6 +26,7 @@
     <string name="header_upcoming">Upcoming</string>
     <string name="header_disabled">Disabled</string>
     <string name="no_alarms_create_one">No alarms. Tap + to add one.</string>
+    <string name="no_active_alarms">No active alarms</string>
     <string name="action_skip_today">Skip Today</string>
     <string name="action_deactivate">Deactivate</string>
     <string name="action_deactivate_and_delete">Deactivate and Delete</string>
@@ -190,13 +191,20 @@
     <string name="label_earlier">Earlier</string>
 
     <!-- Date, Time & Formats -->
-    <string name="day_mon_short">M</string>
-    <string name="day_tue_short">T</string>
-    <string name="day_wed_short">W</string>
-    <string name="day_thu_short">T</string>
-    <string name="day_fri_short">F</string>
-    <string name="day_sat_short">S</string>
-    <string name="day_sun_short">S</string>
+    <string name="day_mon_mini">M</string>
+    <string name="day_tue_mini">T</string>
+    <string name="day_wed_mini">W</string>
+    <string name="day_thu_mini">T</string>
+    <string name="day_fri_mini">F</string>
+    <string name="day_sat_mini">S</string>
+    <string name="day_sun_mini">S</string>
+    <string name="day_mon_short">Mo</string>
+    <string name="day_tue_short">Tu</string>
+    <string name="day_wed_short">We</string>
+    <string name="day_thu_short">Th</string>
+    <string name="day_fri_short">Fr</string>
+    <string name="day_sat_short">Sa</string>
+    <string name="day_sun_short">Su</string>
     <string name="day_monday">Monday</string>
     <string name="day_tuesday">Tuesday</string>
     <string name="day_wednesday">Wednesday</string>
@@ -212,22 +220,31 @@
     <string name="fmt_duration_m">%1$d min</string>
     <string name="fmt_duration_s">%1$d s</string>
     <string name="fmt_duration_0s">0 s</string>
-    <string name="fmt_countdown_long">in %1$dh %2$dm %3$ds</string>
-    <string name="fmt_countdown_short">in %1$dh %2$dm</string>
+    <string name="fmt_countdown_long">%1$dh %2$dm %3$ds</string>
+    <string name="fmt_countdown_short">%1$dh %2$dm</string>
     <string name="fmt_d_h">%1$dd %2$dh</string>
+    <string name="fmt_d_h_m">%1$dd %2$dh %3$dm</string>
     <string name="fmt_h_m">%1$dh %2$dm</string>
+    <string name="fmt_m_only">%1$d min</string>
     <string name="fmt_m_s">%1$dm %2$ds</string>
     <string name="fmt_s">%1$ds</string>
-    <string name="fmt_skipped_tomorrow">Tomorrow %1$s</string>
-    <string name="fmt_skipped_short">%1$s %2$s</string>
-    <string name="fmt_skipped_long">%1$s %2$d.%3$d. %4$s</string>
+    <string name="fmt_skipped_tomorrow">Tomorrow</string>
+    <string name="fmt_skipped_short">%1$s</string>
+    <string name="fmt_skipped_long">%1$s %2$d.%3$d.</string>
     <string name="status_skipped_tomorrow">Tomorrow skipped</string>
     <string name="status_skipped_until">Skipped until %1$s</string>
     <string name="label_minutes_fmt">%1$d min</string>
     <string name="fmt_minutes_short">%1$dm</string>
     <string name="tts_time_announce">It is %1$s</string>
     <string name="fmt_time_printf">%1$02d:%2$02d</string>
+    <string name="fmt_at_time">at %1$s</string>
+    <string name="fmt_tomorrow_at">Tomorrow at %1$s</string>
+    <string name="fmt_date_at_time">%1$s, %2$02d.%3$02d at %4$s</string>
+    <string name="fmt_alarm_in">Alarm in %1$s</string>
     <string name="fmt_timer_count_up">+ %1$02d:%2$02d</string>
+    <string name="label_hour_short">hrs</string>
+    <string name="label_minute_short">min</string>
+    <string name="label_second_short">sec</string>
 
     <!-- Settings & Advanced -->
     <string name="title_settings">Settings</string>
@@ -267,8 +284,13 @@
     <string name="desc_notify_before">Posts a notification for a set time before an alarm is scheduled to ring</string>
     <string name="label_notification_time">Notification time:</string>
     <string name="settings_section_advanced">Advanced</string>
+    <string name="settings_beta_hurdles">Enable Beta Hurdles</string>
+    <string name="settings_beta_hurdles_desc">Allow using experimental hurdles for alarms. If disabled, all active hurdles will be ignored.</string>
     <string name="setting_view_logs">View Logs</string>
     <string name="setting_view_logs_subtext">View application logs for debugging</string>
+    <string name="settings_full_screen_permission">Full Screen Notification</string>
+    <string name="settings_full_screen_permission_desc">Ensure the alarm can appear over other apps</string>
+    <string name="settings_full_screen_permission_reopen">Show Setup Message</string>
     <string name="log_viewer_title">View Application Logs</string>
     <string name="log_search_placeholder">Search logs</string>
     <string name="log_no_entries">Nothing found</string>
@@ -276,6 +298,10 @@
     <string name="log_clear">Clear log</string>
     <string name="log_share">Share logs</string>
     <string name="max_adjustment_limit">Max adjust time is 6h</string>
+    <string name="error_past_time">Resulting time is in the past</string>
+    <string name="error_invalid_timer">Timer duration must be greater than 0</string>
+    <string name="error_invalid_value">Invalid value</string>
+    <string name="error_max_minutes">Max %1$d min</string>
     <string name="settings_section_backup">Backup</string>
     <string name="setting_export">Export Backup</string>
     <string name="setting_export_subtext">Save all settings and alarms to a file</string>
