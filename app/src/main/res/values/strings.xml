@@ -242,6 +242,9 @@
     <string name="fmt_date_at_time">%1$s, %2$02d.%3$02d at %4$s</string>
     <string name="fmt_alarm_in">Alarm in %1$s</string>
     <string name="fmt_timer_count_up">+ %1$02d:%2$02d</string>
+    <string name="label_hour_short">hrs</string>
+    <string name="label_minute_short">min</string>
+    <string name="label_second_short">sec</string>
 
     <!-- Settings & Advanced -->
     <string name="title_settings">Settings</string>
