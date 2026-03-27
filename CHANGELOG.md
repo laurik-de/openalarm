@@ -1,4 +1,13 @@
 ## v0.3.0-Alpha (23.03.2026)
+- Add heading to alarm screen
+- Improved numpad input
+- Improved strings
+- fix: group color was lost when skipping until specific date
+- Hide BETA hurdles behind a setting
+- Improve pop up for full screen notification permission
+- Add error messages/feedback when trying to adjust for invalid time
+
+## v0.3.0-Alpha (23.03.2026)
 - **updated & improved UI**
 - now uses material 3 expressive design
 - improved timer usage
