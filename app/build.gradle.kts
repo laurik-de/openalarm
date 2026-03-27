@@ -15,8 +15,8 @@ android {
         applicationId = "de.laurik.openalarm"
         minSdk = 23
         targetSdk = 36
-        versionCode = 4
-        versionName = "0.3.0-Alpha"
+        versionCode = 5
+        versionName = "0.3.1-Alpha"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
