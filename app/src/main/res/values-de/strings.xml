@@ -191,13 +191,20 @@
     <string name="label_earlier">Früher</string>
 
     <!-- Date, Time & Formats -->
-    <string name="day_mon_short">M</string>
-    <string name="day_tue_short">D</string>
-    <string name="day_wed_short">M</string>
-    <string name="day_thu_short">D</string>
-    <string name="day_fri_short">F</string>
-    <string name="day_sat_short">S</string>
-    <string name="day_sun_short">S</string>
+    <string name="day_mon_mini">M</string>
+    <string name="day_tue_mini">D</string>
+    <string name="day_wed_mini">M</string>
+    <string name="day_thu_mini">D</string>
+    <string name="day_fri_mini">F</string>
+    <string name="day_sat_mini">S</string>
+    <string name="day_sun_mini">S</string>
+    <string name="day_mon_short">Mo</string>
+    <string name="day_tue_short">Di</string>
+    <string name="day_wed_short">Mi</string>
+    <string name="day_thu_short">Do</string>
+    <string name="day_fri_short">Fr</string>
+    <string name="day_sat_short">Sa</string>
+    <string name="day_sun_short">So</string>
     <string name="day_monday">Montag</string>
     <string name="day_tuesday">Dienstag</string>
     <string name="day_wednesday">Mittwoch</string>
@@ -205,7 +212,7 @@
     <string name="day_friday">Freitag</string>
     <string name="day_saturday">Samstag</string>
     <string name="day_sunday">Sonntag</string>
-    <string name="repeat_weekdays">Wochentage</string>
+    <string name="repeat_weekdays">Wochentags</string>
     <string name="repeat_weekends">Wochenende</string>
     <string name="repeat_every_day">Jeden Tag</string>
     <string name="repeat_once">Einmal</string>
@@ -221,9 +228,9 @@
     <string name="fmt_m_only">%1$d min</string>
     <string name="fmt_m_s">%1$d Min %2$d Sek</string>
     <string name="fmt_s">%1$d Sek</string>
-    <string name="fmt_skipped_tomorrow">Morgen %1$s</string>
-    <string name="fmt_skipped_short">%1$s %2$s</string>
-    <string name="fmt_skipped_long">%1$s %2$d.%3$d. %4$s</string>
+    <string name="fmt_skipped_tomorrow">Morgen</string>
+    <string name="fmt_skipped_short">%1$s</string>
+    <string name="fmt_skipped_long">%1$s %2$d.%3$d.</string>
     <string name="status_skipped_tomorrow">Morgen übersprungen</string>
     <string name="status_skipped_until">Übersprungen bis %1$s</string>
     <string name="label_minutes_fmt">%1$d Min.</string>

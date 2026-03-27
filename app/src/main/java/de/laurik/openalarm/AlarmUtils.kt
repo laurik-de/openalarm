@@ -118,12 +118,10 @@ object AlarmUtils {
         val target = Instant.ofEpochMilli(timestamp).atZone(zoneId).toLocalDateTime()
         val now = LocalDateTime.now(zoneId)
 
-        val timeStr = String.format("%02d:%02d", target.hour, target.minute)
-
         // Check if tomorrow using ChronoUnit for accuracy
         val daysBetween = ChronoUnit.DAYS.between(now.toLocalDate(), target.toLocalDate())
 
-        if (daysBetween == 1L) return context.getString(R.string.fmt_skipped_tomorrow, timeStr)
+        if (daysBetween == 1L) return context.getString(R.string.fmt_skipped_tomorrow)
 
         // Format Day Name
         val dayName = when(target.dayOfWeek) {
@@ -137,9 +135,9 @@ object AlarmUtils {
         }
 
         return if (daysBetween < 7) {
-            context.getString(R.string.fmt_skipped_short, dayName, timeStr)
+            context.getString(R.string.fmt_skipped_short, dayName)
         } else {
-            context.getString(R.string.fmt_skipped_long, dayName, target.dayOfMonth, target.monthValue, timeStr)
+            context.getString(R.string.fmt_skipped_long, dayName, target.dayOfMonth, target.monthValue)
         }
     }
 
