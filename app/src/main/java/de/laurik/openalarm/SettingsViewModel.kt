@@ -152,6 +152,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         AlarmScheduler(getApplication()).scheduleNotificationUpdate()
     }
 
+    val fullScreenPermissionShown = repository.fullScreenPermissionShown
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    fun setFullScreenPermissionShown(s: Boolean) = repository.setFullScreenPermissionShown(s)
+
     fun createDefaultAlarm(hour: Int, minute: Int): AlarmItem {
         return AlarmItem(
             id = 0, hour = hour, minute = minute, groupId = "default",

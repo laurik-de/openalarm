@@ -45,7 +45,7 @@
     <string name="menu_clear_skip">Wecker fortsetzen (Skip löschen)</string>
     <string name="alarmlist_empty">Leer</string>
     <string name="edit_group">Gruppe bearbeiten</string>
-    <string name="next_time_group">Nächster: %1$s</string>
+    <string name="next_time_group">in %1$s</string>
     <string name="dialog_title_adjust_group_time">Gruppenzeit anpassen</string>
     <string name="adjust_group_time">Nächste Weckzeit für alle Wecker der Gruppe anpassen</string>
     <string name="adjust_all_count_alarms">Passt alle %1$s aktiven Wecker an</string>
@@ -276,6 +276,9 @@
     <string name="settings_section_advanced">Erweitert</string>
     <string name="setting_view_logs">Logs anzeigen</string>
     <string name="setting_view_logs_subtext">Anwendungslogs zur Fehlersuche anzeigen</string>
+    <string name="settings_full_screen_permission">Vollbild-Benachrichtigung</string>
+    <string name="settings_full_screen_permission_desc">Sicherstellen, dass der Wecker über anderen Apps erscheinen kann</string>
+    <string name="settings_full_screen_permission_reopen">Einrichtungsnachricht anzeigen</string>
     <string name="log_viewer_title">Anwendungslogs</string>
     <string name="log_search_placeholder">Logs durchsuchen</string>
     <string name="log_no_entries">Nichts gefunden</string>

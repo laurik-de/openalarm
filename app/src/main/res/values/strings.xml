@@ -276,6 +276,9 @@
     <string name="settings_section_advanced">Advanced</string>
     <string name="setting_view_logs">View Logs</string>
     <string name="setting_view_logs_subtext">View application logs for debugging</string>
+    <string name="settings_full_screen_permission">Full Screen Notification</string>
+    <string name="settings_full_screen_permission_desc">Ensure the alarm can appear over other apps</string>
+    <string name="settings_full_screen_permission_reopen">Show Setup Message</string>
     <string name="log_viewer_title">View Application Logs</string>
     <string name="log_search_placeholder">Search logs</string>
     <string name="log_no_entries">Nothing found</string>

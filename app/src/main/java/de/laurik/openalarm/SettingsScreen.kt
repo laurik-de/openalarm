@@ -68,6 +68,7 @@ fun SettingsScreen(
     var currentSubScreen by remember { mutableStateOf<String?>(null) } // null, "DEFAULT_ALARM"
     var showImportConfirm by remember { mutableStateOf(false) }
     var pendingImportUri by remember { mutableStateOf<Uri?>(null) }
+    var showFullScreenIntentDialog by remember { mutableStateOf(false) }
     
     // Back Handler for sub-screens
     androidx.activity.compose.BackHandler(enabled = currentSubScreen != null) {
@@ -417,6 +418,20 @@ fun SettingsScreen(
                         modifier = Modifier.bounceClickable(indication = LocalIndication.current) { currentSubScreen = "LOG_VIEWER" }
                     )
 
+                    val isAtLeastAndroid14 = android.os.Build.VERSION.SDK_INT >= 34
+                    if (isAtLeastAndroid14) {
+                        val nm = context.getSystemService(android.app.NotificationManager::class.java)
+                        if (nm != null && !nm.canUseFullScreenIntent()) {
+                            ListItem(
+                                headlineContent = { Text(stringResource(R.string.settings_full_screen_permission)) },
+                                supportingContent = { Text(stringResource(R.string.settings_full_screen_permission_desc)) },
+                                modifier = Modifier.bounceClickable(indication = LocalIndication.current) {
+                                    showFullScreenIntentDialog = true
+                                }
+                            )
+                        }
+                    }
+
                     HorizontalDivider(Modifier.padding(vertical = 16.dp))
 
                     // --- BACKUP ---
@@ -596,6 +611,29 @@ fun SettingsScreen(
                                         }
                                     }
                                 }
+                            }
+                        )
+                    }
+
+                    if (showFullScreenIntentDialog) {
+                        val packageName = context.packageName
+                        AlertDialog(
+                            onDismissRequest = { showFullScreenIntentDialog = false },
+                            title = { Text(stringResource(R.string.dialog_title_permission_required)) },
+                            text = { Text(stringResource(R.string.dialog_msg_permission_full_screen)) },
+                            confirmButton = {
+                                TextButton(onClick = {
+                                    showFullScreenIntentDialog = false
+                                    if (android.os.Build.VERSION.SDK_INT >= 34) {
+                                        val intent = Intent(android.provider.Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT).apply {
+                                            data = Uri.parse("package:$packageName")
+                                        }
+                                        context.startActivity(intent)
+                                    }
+                                }) { Text(stringResource(R.string.action_grant)) }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { showFullScreenIntentDialog = false }) { Text(stringResource(R.string.action_cancel)) }
                             }
                         )
                     }

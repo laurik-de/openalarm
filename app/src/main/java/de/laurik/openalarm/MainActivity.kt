@@ -128,7 +128,7 @@ class MainActivity : ComponentActivity() {
 
             de.laurik.openalarm.ui.theme.OpenAlarmTheme(themeMode = themeMode, isPureBlack = isPureBlack) {
                 MainContent(settingsViewModel, pagerState)
-                CheckSystemPermissions()
+                CheckSystemPermissions(settingsViewModel)
             }
         }
     }
@@ -219,7 +219,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun CheckSystemPermissions() {
+fun CheckSystemPermissions(viewModel: SettingsViewModel) {
     val context = LocalContext.current
     val packageName = context.packageName
 
@@ -243,7 +243,7 @@ fun CheckSystemPermissions() {
         // Android 14 full screen intent property
         if (Build.VERSION.SDK_INT >= 34) {
             val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            if (!nm.canUseFullScreenIntent()) {
+            if (!nm.canUseFullScreenIntent() && !viewModel.fullScreenPermissionShown.value) {
                 showFullScreenDialog = true
             }
         }
@@ -281,12 +281,16 @@ fun CheckSystemPermissions() {
 
     if (showFullScreenDialog) {
         AlertDialog(
-            onDismissRequest = { showFullScreenDialog = false },
+            onDismissRequest = { 
+                showFullScreenDialog = false 
+                viewModel.setFullScreenPermissionShown(true)
+            },
             title = { Text(stringResource(R.string.dialog_title_permission_required)) },
             text = { Text(stringResource(R.string.dialog_msg_permission_full_screen)) },
             confirmButton = {
                 TextButton(onClick = {
                     showFullScreenDialog = false
+                    viewModel.setFullScreenPermissionShown(true)
                     if (Build.VERSION.SDK_INT >= 34) {
                         val intent = Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT).apply {
                             data = Uri.parse("package:$packageName")
@@ -296,7 +300,10 @@ fun CheckSystemPermissions() {
                 }) { Text(stringResource(R.string.action_grant)) }
             },
             dismissButton = {
-                TextButton(onClick = { showFullScreenDialog = false }) { Text(stringResource(R.string.action_cancel)) }
+                TextButton(onClick = { 
+                    showFullScreenDialog = false 
+                    viewModel.setFullScreenPermissionShown(true)
+                }) { Text(stringResource(R.string.action_cancel)) }
             }
         )
     }
