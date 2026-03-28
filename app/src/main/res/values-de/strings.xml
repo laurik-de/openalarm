@@ -298,6 +298,10 @@
     <string name="log_clear">Löschen</string>
     <string name="log_share">Logs teilen</string>
     <string name="max_adjustment_limit">Max. Anpassung ist 6 Std.</string>
+    <string name="error_past_time">Resultierende Zeit ist in der Vergangenheit</string>
+    <string name="error_invalid_timer">Dauer muss größer als 0 sein</string>
+    <string name="error_invalid_value">Ungültiger Wert</string>
+    <string name="error_max_minutes">Max %1$d Min.</string>
     <string name="settings_section_backup">Sicherung</string>
     <string name="setting_export">Backup exportieren</string>
     <string name="setting_export_subtext">Alle Einstellungen und Wecker in eine Datei speichern</string>
@@ -347,7 +351,7 @@
     <string name="label_snooze_count">Schlummern %1$d %2$s</string>
     <string name="dialog_title_permission_required">Berechtigung erforderlich</string>
     <string name="dialog_msg_permission_exact_alarm">Um Wecker pünchtlich auszulösen, benötigt diese App die Berechtigung \'Wecker &amp; Erinnerungen\'.</string>
-    <string name="dialog_msg_permission_full_screen">Um den Weckbildschirm bei gesperrtem Telefon anzuzeigen, erlaube bitte \'Vollbild-Benachrichtigungen\'.</string>
+    <string name="dialog_msg_permission_full_screen">Auf einigen Geräten ist es notwendig, \'Vollbild-Benachrichtigungen\' zu erlauben, um den Weckbildschirm im gesperrten Zustand anzuzeigen. Es funktioniert möglicherweise auch ohne. Diese Einstellung kann jederzeit in den Einstellungen erreicht werden.</string>
     <string name="dialog_title_xiaomi_fix">Xiaomi-Berechtigung erforderlich</string>
     <string name="dialog_msg_xiaomi_fix">Damit der Weckbildschirm auf Xiaomi-Geräten im gesperrten Zustand angezeigt wird, musst du "Auf Sperrbildschirm anzeigen" manuell in den Einstellungen aktivieren.</string>
     <string name="action_open_settings">Einstellungen öffnen</string>

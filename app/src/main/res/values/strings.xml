@@ -351,7 +351,7 @@
     <string name="label_snooze_count">Snooze %1$d %2$s</string>
     <string name="dialog_title_permission_required">Permission Required</string>
     <string name="dialog_msg_permission_exact_alarm">To ring alarms at the exact time, this app needs the \'Alarms &amp; Reminders\' permission.</string>
-    <string name="dialog_msg_permission_full_screen">To show the alarm screen while the phone is locked, please allow \'Full-screen notifications\'.</string>
+    <string name="dialog_msg_permission_full_screen">For some devices, it is necessary to allow \'Full-screen notifications\' to show the alarm screen while the phone is locked. It might work without it. You can always review this in the settings.</string>
     <string name="dialog_title_xiaomi_fix">Xiaomi Permission Required</string>
     <string name="dialog_msg_xiaomi_fix">For the alarm screen to show while locked on Xiaomi devices, you must manually enable "Show on lock screen" in settings.</string>
     <string name="action_open_settings">Open Settings</string>

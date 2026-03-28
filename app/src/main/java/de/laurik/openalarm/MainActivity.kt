@@ -227,6 +227,7 @@ fun CheckSystemPermissions(viewModel: SettingsViewModel) {
 
     // Full Screen Intent Check (Android 14+)
     var showFullScreenDialog by remember { mutableStateOf(false) }
+    val fullScreenPermissionShown by viewModel.fullScreenPermissionShown.collectAsStateWithLifecycle()
 
     // Xiaomi Specific Guidance
     var showXiaomiDialog by remember { mutableStateOf(false) }
@@ -243,7 +244,7 @@ fun CheckSystemPermissions(viewModel: SettingsViewModel) {
         // Android 14 full screen intent property
         if (Build.VERSION.SDK_INT >= 34) {
             val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            if (!nm.canUseFullScreenIntent() && !viewModel.fullScreenPermissionShown.value) {
+            if (!nm.canUseFullScreenIntent() && !fullScreenPermissionShown) {
                 showFullScreenDialog = true
             }
         }
