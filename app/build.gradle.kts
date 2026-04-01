@@ -3,7 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     kotlin("plugin.serialization") version "2.0.0"
-    id("com.google.devtools.ksp") version "2.3.4"
+    id("com.google.devtools.ksp") version "2.3.6"
     id("com.mikepenz.aboutlibraries.plugin.android")
 }
 
@@ -15,8 +15,8 @@ android {
         applicationId = "de.laurik.openalarm"
         minSdk = 23
         targetSdk = 36
-        versionCode = 5
-        versionName = "0.3.1-Alpha"
+        versionCode = 6
+        versionName = "0.3.2-Alpha"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -48,10 +48,12 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
         isCoreLibraryDesugaringEnabled = true
     }
-    kotlinOptions {
-        jvmTarget = "11"
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
 
-        freeCompilerArgs += "-opt-in=kotlinx.serialization.InternalSerializationApi"
+            freeCompilerArgs.add("-opt-in=kotlinx.serialization.InternalSerializationApi")
+        }
     }
     buildFeatures {
         compose = true
@@ -61,8 +63,8 @@ android {
 dependencies {
     implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.documentfile)
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
     implementation(libs.compose.icons.extended)
     implementation(libs.androidx.core.ktx)
