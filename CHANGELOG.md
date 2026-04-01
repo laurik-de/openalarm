@@ -1,3 +1,8 @@
+## v0.3.2-Alpha (01.04.2026)
+- optimized timer screen
+- fixed pop up for full screen notification permission reappearing
+- fixed compilation warnings and mini bug
+
 ## v0.3.1-Alpha (27.03.2026)
 - Add heading to alarm screen
 - Improved numpad input
