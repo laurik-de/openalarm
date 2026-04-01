@@ -408,7 +408,7 @@ object NotificationRenderer {
 
         // Handle Paused State for Chronometer
         if (isPaused) {
-            val remaining = timer?.remainingMillis ?: 0L
+            val remaining = timer.remainingMillis
             // To show static time, we use a trick: setBase to current + remaining, and stop it.
             // Or just setTextViewText on the chronometer if it supports it? Chronometer supports setBase.
             // Actually, simplest is to set it to 0 and not start it? No, we need it to show precisely the remaining.

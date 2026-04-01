@@ -121,7 +121,6 @@ class MainActivity : ComponentActivity() {
             if (!view.isInEditMode) {
                 SideEffect {
                     val window = (view.context as android.app.Activity).window
-                    window.statusBarColor = Color.Transparent.toArgb()
                     WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = useDarkIcons
                 }
             }
@@ -618,11 +617,13 @@ fun AlarmScreen(
             ): androidx.compose.ui.geometry.Offset {
                 // If scrolling up the list (available.y > 0) and at top, expand it
                 if (available.y > 0 && scrollState.firstVisibleItemIndex == 0 && scrollState.firstVisibleItemScrollOffset == 0) {
-                    val delta = available.y / 500f
-                    scope.launch {
-                        expansion.snapTo((expansion.value + delta).coerceIn(0f, 1f))
+                    if (expansion.value < 1f) {
+                        val delta = available.y / 500f
+                        scope.launch {
+                            expansion.snapTo((expansion.value + delta).coerceIn(0f, 1f))
+                        }
+                        return available
                     }
-                    return available
                 }
                 return super.onPostScroll(consumed, available, source)
             }

@@ -10,8 +10,8 @@ import androidx.compose.foundation.lazy.items
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Stop
@@ -182,7 +182,7 @@ fun CustomRingtoneManagerDialog(
                         navigationIcon = {
                             val navIS = remember { MutableInteractionSource() }
                             IconButton(onClick = onDismiss, interactionSource = navIS, modifier = Modifier.bounce(navIS)) {
-                                Icon(Icons.Default.ArrowBack, stringResource(R.string.desc_back))
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.desc_back))
                             }
                         },
                         scrollBehavior = scrollBehavior,

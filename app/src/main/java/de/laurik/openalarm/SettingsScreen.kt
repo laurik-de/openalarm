@@ -23,6 +23,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
+import androidx.core.content.IntentCompat
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -79,8 +80,7 @@ fun SettingsScreen(
     val timerRingtoneLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { res ->
             if (res.resultCode == android.app.Activity.RESULT_OK) {
-                val uri =
-                    res.data?.getParcelableExtra<Uri>(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)
+                val uri = res.data?.let { IntentCompat.getParcelableExtra(it, RingtoneManager.EXTRA_RINGTONE_PICKED_URI, Uri::class.java) }
                 viewModel.setTimerRingtone(uri?.toString())
             }
         }

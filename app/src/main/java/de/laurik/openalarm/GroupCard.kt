@@ -31,6 +31,7 @@ import androidx.core.graphics.ColorUtils
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.foundation.gestures.AnchoredDraggableDefaults
 import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.gestures.AnchoredDraggableState
 import androidx.compose.foundation.gestures.DraggableAnchors
@@ -105,16 +106,16 @@ fun GroupCard(
     val decaySpec = rememberSplineBasedDecay<Float>()
     var contentHeight by remember { mutableStateOf(0f) }
     
-    val state = remember(density, decaySpec) {
+    val state = remember(density) {
         AnchoredDraggableState<ExpansionState>(
             initialValue = if (group.isExpanded) ExpansionState.Expanded else ExpansionState.Collapsed,
             anchors = DraggableAnchors {
                 ExpansionState.Collapsed at 0f
-            },
-            positionalThreshold = { it * 0.5f },
-            velocityThreshold = { with(density) { 100.dp.toPx() } },
-            snapAnimationSpec = spatialSpring(),
-            decayAnimationSpec = decaySpec
+                // Always have an Expanded anchor if we are expanded, to avoid invalid state
+                if (group.isExpanded) {
+                    ExpansionState.Expanded at (if (contentHeight > 0f) contentHeight else 1f)
+                }
+            }
         )
     }
 
@@ -219,10 +220,20 @@ fun GroupCard(
     ) {
         Column {
             // HEADER
+            val spring = spatialSpring<Float>()
+            val flingBehavior = AnchoredDraggableDefaults.flingBehavior<ExpansionState>(
+                state = state,
+                positionalThreshold = { it * 0.5f },
+                animationSpec = spring
+            )
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .anchoredDraggable(state, Orientation.Vertical)
+                    .anchoredDraggable(
+                        state = state,
+                        orientation = Orientation.Vertical,
+                        flingBehavior = flingBehavior
+                    )
                     .bounceClickable(onClick = { 
                         scope.launch {
                             val target = if (state.currentValue == ExpansionState.Collapsed) ExpansionState.Expanded else ExpansionState.Collapsed

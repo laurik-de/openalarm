@@ -5,6 +5,7 @@ import android.media.RingtoneManager
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.IntentCompat
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -96,7 +97,8 @@ fun AlarmConfigSection(
     val ringtoneTitle = remember(ringtoneUri) { RingtoneUtils.getRingtoneTitle(context, ringtoneUri) }
     val ringtoneLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { res ->
         if (res.resultCode == android.app.Activity.RESULT_OK) {
-            onRingtoneChange(res.data?.getParcelableExtra<Uri>(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)?.toString())
+            val uri = res.data?.let { IntentCompat.getParcelableExtra(it, RingtoneManager.EXTRA_RINGTONE_PICKED_URI, Uri::class.java) }
+            onRingtoneChange(uri?.toString())
         }
     }
 

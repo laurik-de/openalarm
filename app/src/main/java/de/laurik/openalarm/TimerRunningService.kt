@@ -30,7 +30,7 @@ class TimerRunningService : Service() {
         val timers = AlarmRepository.activeTimers
 
         if (timers.isEmpty()) {
-            stopForeground(true)
+            stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
             return
         }

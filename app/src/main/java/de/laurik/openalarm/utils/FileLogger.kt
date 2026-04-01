@@ -22,9 +22,7 @@ class FileLogger(context: Context) {
 
     init {
         logFile = File(context.filesDir, LOG_FILE_NAME)
-        if (!logFile.parentFile.exists()) {
-            logFile.parentFile.mkdirs()
-        }
+        logFile.parentFile?.let { if (!it.exists()) it.mkdirs() }
     }
 
     /**
@@ -32,9 +30,7 @@ class FileLogger(context: Context) {
      */
     fun log(level: Int, tag: String, message: String, throwable: Throwable? = null) {
         try {
-            if (!logFile.parentFile.exists()) {
-                logFile.parentFile.mkdirs()
-            }
+            logFile.parentFile?.let { if (!it.exists()) it.mkdirs() }
             // Rotate log file if it's getting too large
             if (logFile.exists() && logFile.length() > MAX_LOG_SIZE_BYTES) {
                 rotateLogs()

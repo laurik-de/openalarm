@@ -487,7 +487,7 @@ class RingtoneService : Service(), TextToSpeech.OnInitListener {
         AlarmRepository.setCurrentRingingId(-1)
 
         // Stop foreground and cancel the foreground notification
-        stopForeground(true)
+        stopForeground(STOP_FOREGROUND_REMOVE)
         val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         nm.cancel(stoppedId)
 
@@ -817,7 +817,6 @@ class RingtoneService : Service(), TextToSpeech.OnInitListener {
                         .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                         .build()
                 )
-                setAudioStreamType(AudioManager.STREAM_ALARM)
                 isLooping = true
 
                 // Set the volume directly on the MediaPlayer
@@ -842,7 +841,6 @@ class RingtoneService : Service(), TextToSpeech.OnInitListener {
                             .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                             .build()
                     )
-                    setAudioStreamType(AudioManager.STREAM_ALARM)
                     isLooping = true
                     if (fadeInSeconds > 0) setVolume(0.01f, 0.01f)
                     else { val v = perceptualVolume(volume); setVolume(v, v) }
@@ -1092,7 +1090,9 @@ class RingtoneService : Service(), TextToSpeech.OnInitListener {
                         }
                     }
                     override fun onDone(utteranceId: String?) { restoreVolume() }
+                    @Deprecated("Deprecated in Java")
                     override fun onError(utteranceId: String?) { restoreVolume() }
+                    override fun onError(utteranceId: String?, errorCode: Int) { restoreVolume() }
                 })
                 isTtsReady = true
             }

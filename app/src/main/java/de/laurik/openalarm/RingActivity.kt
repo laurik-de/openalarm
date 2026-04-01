@@ -17,7 +17,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
@@ -338,7 +338,7 @@ fun TimerRingingScreen(startTime: Long, timerId: Int, onStop: () -> Unit, onAdd:
                 .padding(16.dp)
                 .statusBarsPadding()
         ) {
-            Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.desc_back), tint = Color.White)
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.desc_back), tint = Color.White)
         }
 
         Column(
