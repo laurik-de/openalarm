@@ -43,7 +43,7 @@ fun WheelTimePicker(
     onTimeChange: (Int, Int, Int) -> Unit,
     onColumnClick: (TimeColumn) -> Unit
 ) {
-    val pageCount = 100_000
+    val pageCount = 2400
     val startPage = pageCount / 2
 
     val initialHourPage = remember { startPage + (hour - (startPage % 24)) }
@@ -210,7 +210,7 @@ fun WheelColumn(
             pageSize = PageSize.Fixed(64.dp),
             contentPadding = PaddingValues(vertical = 78.dp),
             // OPTIMIZATION 1: Reduce offscreen load to keep frame rate high
-            beyondViewportPageCount = 3,
+            beyondViewportPageCount = 1,
             flingBehavior = flingBehavior,
             userScrollEnabled = !isCompact,
             // OPTIMIZATION 2: Use Keys to help Compose recycle views (01 is always 01)

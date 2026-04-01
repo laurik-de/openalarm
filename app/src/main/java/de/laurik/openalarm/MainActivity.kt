@@ -451,7 +451,7 @@ fun MainContent(settingsViewModel: SettingsViewModel, pagerState: PagerState) {
                 HorizontalPager(
                     state = pagerState,
                     modifier = Modifier.fillMaxSize(),
-                    beyondViewportPageCount = 1,
+                    beyondViewportPageCount = 2,
                     userScrollEnabled = globalNumpad == null
                 ) { page ->
                     when (Screen.entries[page]) {
