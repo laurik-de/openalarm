@@ -389,4 +389,6 @@
         <item quantity="one">(Ordner, %1$d Titel)</item>
         <item quantity="other">(Ordner, %1$d Titel)</item>
     </plurals>
+    <string name="message_alarm_deleted">Alarm gelöscht</string>
+    <string name="action_undo">Rückgängig</string>
 </resources>

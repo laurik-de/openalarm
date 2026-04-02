@@ -346,6 +346,7 @@ fun MainContent(settingsViewModel: SettingsViewModel, pagerState: PagerState) {
     val currentScreen = Screen.entries[pagerState.currentPage]
     val scope = rememberCoroutineScope()
     val dashboardViewModel: DashboardViewModel = viewModel()
+    val snackbarHostState = remember { SnackbarHostState() }
     
     val activeTimers = dashboardViewModel.activeTimers
     val currentTime by dashboardViewModel.currentTime.collectAsStateWithLifecycle()
@@ -359,6 +360,7 @@ fun MainContent(settingsViewModel: SettingsViewModel, pagerState: PagerState) {
             topBar = {
                 // Status Bar (Keep existing logic if any)
             },
+            snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
             bottomBar = {
                 Column {
                     // Small overlay bar for current timer (Keep it)
@@ -459,7 +461,8 @@ fun MainContent(settingsViewModel: SettingsViewModel, pagerState: PagerState) {
                             settingsViewModel = settingsViewModel,
                             triggerCreateAlarm = showAlarmDialogForNew,
                             onAlarmDialogDismiss = { showAlarmDialogForNew = false },
-                            isNumpadVisible = globalNumpad != null
+                            isNumpadVisible = globalNumpad != null,
+                            snackbarHostState = snackbarHostState
                         )
                         Screen.TIMER -> TimerScreen(dashboardViewModel, settingsViewModel.timerPresets.collectAsState().value, triggerStartTimer, onNumpadChange = { globalNumpad = it })
                         Screen.SETTINGS -> SettingsScreen(settingsViewModel, onClose = { scope.launch { pagerState.animateScrollToPage(Screen.ALARM.ordinal) } })
@@ -576,7 +579,8 @@ fun AlarmScreen(
     settingsViewModel: SettingsViewModel,
     triggerCreateAlarm: Boolean = false,
     onAlarmDialogDismiss: () -> Unit = {},
-    isNumpadVisible: Boolean = false
+    isNumpadVisible: Boolean = false,
+    snackbarHostState: SnackbarHostState
 ) {
     val context = LocalContext.current
 
@@ -754,7 +758,20 @@ fun AlarmScreen(
                             quickAdjustPresets = quickAdjustPresets,
                             onClick = { editingAlarm = alarm; isCreatingNew = false },
                             onToggleGroup = { viewModel.toggleAlarm(alarm, it) },
-                            onDelete = { viewModel.deleteAlarm(alarm) },
+                            onDelete = {
+                                val deleted = alarm
+                                viewModel.deleteAlarm(deleted)
+                                scope.launch {
+                                    val result = snackbarHostState.showSnackbar(
+                                        message = context.getString(R.string.message_alarm_deleted),
+                                        actionLabel = context.getString(R.string.action_undo),
+                                        duration = SnackbarDuration.Short
+                                    )
+                                    if (result == SnackbarResult.ActionPerformed) {
+                                        viewModel.undoDeleteAlarm(deleted)
+                                    }
+                                }
+                            },
                             onSkipNext = {
                                 val nextRaw = AlarmUtils.getNextOccurrence(
                                     alarm.hour,

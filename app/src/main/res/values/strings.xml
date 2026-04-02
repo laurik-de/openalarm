@@ -389,4 +389,6 @@
         <item quantity="one">(Folder, %1$d track)</item>
         <item quantity="other">(Folder, %1$d tracks)</item>
     </plurals>
+    <string name="message_alarm_deleted">Alarm deleted</string>
+    <string name="action_undo">Undo</string>
 </resources>

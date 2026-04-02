@@ -355,6 +355,14 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         NotificationRenderer.refreshAll(context)
     }
 
+    fun undoDeleteAlarm(alarm: AlarmItem) {
+        AlarmRepository.addAlarm(context, alarm)
+        val group = groups.find { it.id == alarm.groupId }
+        val offset = group?.offsetMinutes ?: 0
+        scheduler.schedule(alarm, offset)
+        NotificationRenderer.refreshAll(context)
+    }
+
     // --- TIMER INTENTS ---
 
 

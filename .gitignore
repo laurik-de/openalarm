@@ -16,4 +16,3 @@ Thumbs.db
 *.keystore
 kotlin/
 gradle.properties
-*.jks
