@@ -95,8 +95,10 @@ fun TimerScreen(
                             minute = m
                             second = s
                             snapNext = true
-                            updateTrigger++
+                            // Removed updateTrigger++ to avoid feedback loop and redundant wheel syncs.
+                            // SmartTimePickerLayout handles column-advance syncs automatically.
                         },
+                        onSyncRequested = { updateTrigger++ },
                         onOpenKeyboard = { keyboardTrigger++ },
                         onStart = {
                             val totalSec = (hour * 3600) + (minute * 60) + second
@@ -146,6 +148,7 @@ fun TimerSetupView(
     sharedTransitionScope: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope,
     onTimeChange: (Int, Int, Int) -> Unit,
+    onSyncRequested: () -> Unit,
     onOpenKeyboard: () -> Unit,
     onStart: () -> Unit
 ) {
@@ -230,7 +233,7 @@ fun TimerSetupView(
                             val presetIS = remember { MutableInteractionSource() }
                             with(sharedTransitionScope) {
                                 OutlinedButton(
-                                    onClick = { onTimeChange(mins / 60, mins % 60, 0) },
+                                    onClick = { onTimeChange(mins / 60, mins % 60, 0); onSyncRequested() },
                                     modifier = Modifier
                                         .sharedBounds(
                                             rememberSharedContentState(key = "preset_$index"),

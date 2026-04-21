@@ -54,8 +54,12 @@ fun WheelTimePicker(
     val minuteState = rememberPagerState(initialPage = initialMinutePage) { pageCount }
     val secondState = rememberPagerState(initialPage = initialSecondPage) { pageCount }
 
+    var isProgrammaticScroll by remember { mutableStateOf(false) }
+
     // 1. SCROLL LISTENER
     LaunchedEffect(hourState.currentPage, minuteState.currentPage, secondState.currentPage) {
+        if (isProgrammaticScroll) return@LaunchedEffect
+        
         val h = hourState.currentPage % 24
         val m = minuteState.currentPage % 60
         val s = if (seconds != null) secondState.currentPage % 60 else 0
@@ -67,30 +71,39 @@ fun WheelTimePicker(
 
     // 2. COMMAND LISTENER (Presets/Numpad)
     LaunchedEffect(updateTrigger) {
-        suspend fun syncWheel(state: androidx.compose.foundation.pager.PagerState, targetVal: Int, range: Int) {
-            if (state.isScrollInProgress) return
+        isProgrammaticScroll = true
+        try {
+            suspend fun syncWheel(state: androidx.compose.foundation.pager.PagerState, targetVal: Int, range: Int) {
+                if (state.isScrollInProgress) return
 
-            val currentVal = state.currentPage % range
-            if (currentVal != targetVal) {
-                val diff = (targetVal - currentVal + range) % range
-                val targetPage = state.currentPage + diff
+                val currentVal = state.currentPage % range
+                if (currentVal != targetVal) {
+                    val diff = (targetVal - currentVal + range) % range
+                    val targetPage = state.currentPage + diff
 
-                if (snapImmediately) {
-                    state.scrollToPage(targetPage)
-                } else {
-                    // OPTIMIZATION: Use a Tween with EaseOutQuart for a fast, mechanical spin
-                    // durationMillis = 600 ensure it doesn't wait too long, but feels satisfying
-                    state.animateScrollToPage(
-                        targetPage,
-                        animationSpec = tween(durationMillis = 500, easing = EaseOutQuart)
-                    )
+                    if (snapImmediately) {
+                        state.scrollToPage(targetPage)
+                    } else {
+                        state.animateScrollToPage(
+                            targetPage,
+                            animationSpec = tween(durationMillis = 500, easing = EaseOutQuart)
+                        )
+                    }
                 }
             }
-        }
-        launch { syncWheel(hourState, hour, 24) }
-        launch { syncWheel(minuteState, minute, 60) }
-        if (seconds != null) {
-            launch { syncWheel(secondState, seconds, 60) }
+            
+            // Run all syncs in parallel and wait for them
+            kotlinx.coroutines.coroutineScope {
+                launch { syncWheel(hourState, hour, 24) }
+                launch { syncWheel(minuteState, minute, 60) }
+                if (seconds != null) {
+                    launch { syncWheel(secondState, seconds, 60) }
+                }
+            }
+        } finally {
+            // Small delay to ensure any last-frame scroll events are ignored
+            kotlinx.coroutines.delay(50)
+            isProgrammaticScroll = false
         }
     }
 
