@@ -42,7 +42,9 @@ class RingtoneService : Service(), TextToSpeech.OnInitListener {
 
             AudioManager.AUDIOFOCUS_LOSS -> {
                 // Permanent loss (call, another alarm app, etc.)
-                stopCurrentRinging(isTimeout = false, isSnoozed = false)
+                serviceScope.launch {
+                    stopCurrentRinging(isTimeout = false, isSnoozed = false)
+                }
             }
 
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
@@ -138,6 +140,7 @@ class RingtoneService : Service(), TextToSpeech.OnInitListener {
             logger.d(TAG, "Ensuring repository is loaded...")
             val startTime = System.currentTimeMillis()
             AlarmRepository.ensureLoaded(applicationContext)
+            SettingsRepository.getInstance(applicationContext) // Pre-warm settings
             val loadDuration = System.currentTimeMillis() - startTime
             logger.d(TAG, "Repository loaded in ${loadDuration}ms. Handling intent.")
             
@@ -159,7 +162,7 @@ class RingtoneService : Service(), TextToSpeech.OnInitListener {
         return START_NOT_STICKY
     }
 
-    private fun handleIntent(intent: Intent) {
+    private suspend fun handleIntent(intent: Intent) {
         val action = intent.action
         when (action) {
             "STOP_RINGING", "STOP" -> handleStopAction(intent)
@@ -171,7 +174,7 @@ class RingtoneService : Service(), TextToSpeech.OnInitListener {
 
     // --- START REQUEST ---
 
-    private fun handleStartRequest(intent: Intent) {
+    private suspend fun handleStartRequest(intent: Intent) {
         val newId = intent.getIntExtra("ALARM_ID", -1)
         var newType = intent.getStringExtra("ALARM_TYPE") ?: if (newId > 1000) "TIMER" else "ALARM"
         // Cleanup subtypes
@@ -236,15 +239,17 @@ class RingtoneService : Service(), TextToSpeech.OnInitListener {
         }
     }
 
-    private fun startRingingSession(id: Int, type: String, label: String, triggerTime: Long) {
+    private suspend fun startRingingSession(id: Int, type: String, label: String, triggerTime: Long) {
         StatusHub.trigger(StatusEvent.Ringing(id, type))
         
         currentRingingId = id
         currentType = type
         AlarmRepository.setCurrentRingingId(id)
 
-        // Force stop Timer Service to remove duplicate "Running" notification
-        stopService(Intent(this, TimerRunningService::class.java))
+        // Force stop Timer Service to remove duplicate "Running" notification - Async to prevent lag
+        serviceScope.launch {
+            stopService(Intent(this@RingtoneService, TimerRunningService::class.java))
+        }
 
         // Remove the silent ringing notification if it exists (for queued alarms)
         val nm = getSystemService(NOTIFICATION_SERVICE) as android.app.NotificationManager
@@ -256,21 +261,20 @@ class RingtoneService : Service(), TextToSpeech.OnInitListener {
         val notification = NotificationRenderer.buildRingingNotification(
             this, id, type, label, triggerTime
         )
+        // Offset ID specifically so Android sees this as a BRAND NEW notification.
+        // If we use the exact same ID as the TimerRunningService, Android ignores the FullScreenIntent!
+        val ringingNoteId = id + 200000
+        
         if (Build.VERSION.SDK_INT >= 29) {
-            startForeground(id, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
+            startForeground(ringingNoteId, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
         } else {
-            startForeground(id, notification)
+            startForeground(ringingNoteId, notification)
         }
 
         // Refresh other notifications (timers, snooze, next alarm)
         NotificationRenderer.refreshAll(this)
 
-        // Audio
-        serviceScope.launch {
-            startAudio(id, type)
-        }
-
-        // Activity
+        // Activity FIRST - launch screen immediately for responsive UX
         val fullScreenIntent = Intent(this, RingActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or 
                    Intent.FLAG_ACTIVITY_NO_USER_ACTION or 
@@ -297,6 +301,9 @@ class RingtoneService : Service(), TextToSpeech.OnInitListener {
         } catch (e: Exception) {
             logger.e(TAG, "Failed to manually start RingActivity", e)
         }
+
+        // Audio AFTER activity launch - MediaPlayer.prepare() is synchronous and can block
+        startAudio(id, type)
     }
 
     // --- TIMEOUT LOGIC ---
@@ -325,11 +332,13 @@ class RingtoneService : Service(), TextToSpeech.OnInitListener {
         } else {
             logger.w(TAG, "Timeout for $id already passed (trigger was ${-delayMs/1000}s ago)")
             // Timeout already passed - handle immediately
-            handleTimeoutTriggered(id, type)
+            serviceScope.launch {
+                handleTimeoutTriggered(id, type)
+            }
         }
     }
 
-    private fun handleTimeoutTriggered(id: Int, type: String) {
+    private suspend fun handleTimeoutTriggered(id: Int, type: String) {
         logger.d(TAG, "TIMEOUT triggered for $id ($type)")
         timeoutJobs.remove(id)
 
@@ -401,7 +410,7 @@ class RingtoneService : Service(), TextToSpeech.OnInitListener {
 
     // --- STOPPING LOGIC ---
 
-    private fun handleStopAction(intent: Intent) {
+    private suspend fun handleStopAction(intent: Intent) {
         val targetId = intent.getIntExtra("TARGET_ID", -1)
 
         if (targetId != -1 && targetId != currentRingingId) {
@@ -449,7 +458,7 @@ class RingtoneService : Service(), TextToSpeech.OnInitListener {
         stopCurrentRinging(false, false)
     }
 
-    private fun stopCurrentRinging(isTimeout: Boolean, isSnoozed: Boolean) {
+    private suspend fun stopCurrentRinging(isTimeout: Boolean, isSnoozed: Boolean) {
         if (currentRingingId == -1) return
 
         val id = currentRingingId
@@ -487,11 +496,17 @@ class RingtoneService : Service(), TextToSpeech.OnInitListener {
         AlarmRepository.setCurrentRingingId(-1)
 
         // Stop foreground and cancel the foreground notification
-        stopForeground(STOP_FOREGROUND_REMOVE)
+        if (Build.VERSION.SDK_INT >= 24) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        } else {
+            @Suppress("DEPRECATION")
+            stopForeground(true)
+        }
         val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         nm.cancel(stoppedId)
+        nm.cancel(stoppedId + 200000)
 
-        logger.d(TAG, "Foreground service stopped and notification $stoppedId cancelled")
+        logger.d(TAG, "Foreground service stopped and notifications $stoppedId / ${stoppedId + 200000} cancelled")
 
         // Restart TimerRunningService if active timers remain
         if (AlarmRepository.activeTimers.isNotEmpty()) {
@@ -511,7 +526,7 @@ class RingtoneService : Service(), TextToSpeech.OnInitListener {
     }
 
     // --- SNOOZE LOGIC ---
-    private fun handleSnooze(alarm: AlarmItem, customMinutes: Int? = null) {
+    private suspend fun handleSnooze(alarm: AlarmItem, customMinutes: Int? = null) {
         try {
             val snoozeMins = customMinutes ?: alarm.snoozeDuration ?: SettingsRepository.getInstance(this).defaultSnooze.value
             val snoozeTime = System.currentTimeMillis() + snoozeMins * 60 * 1000
@@ -564,7 +579,7 @@ class RingtoneService : Service(), TextToSpeech.OnInitListener {
         }
     }
 
-    private fun handleSnoozeAction(intent: Intent) {
+    private suspend fun handleSnoozeAction(intent: Intent) {
         val targetId = intent.getIntExtra("ALARM_ID", -1).takeIf { it != -1 }
             ?: intent.getIntExtra("TARGET_ID", -1).takeIf { it != -1 }
             ?: currentRingingId
@@ -583,7 +598,7 @@ class RingtoneService : Service(), TextToSpeech.OnInitListener {
         handleSnooze(alarm, customMins)
     }
 
-    private fun handleAddTimeAction(intent: Intent) {
+    private suspend fun handleAddTimeAction(intent: Intent) {
         val targetId = intent.getIntExtra("TARGET_ID", currentRingingId)
         val seconds = intent.getIntExtra("SECONDS", 60)
         val timer = AlarmRepository.getTimer(targetId) ?: return
@@ -622,7 +637,7 @@ class RingtoneService : Service(), TextToSpeech.OnInitListener {
         NotificationRenderer.refreshAll(this)
     }
 
-    private fun checkQueueAndResume() {
+    private suspend fun checkQueueAndResume() {
         try {
             // First, validate and clean up queue
             val now = System.currentTimeMillis()
@@ -780,13 +795,14 @@ class RingtoneService : Service(), TextToSpeech.OnInitListener {
         targetSliderValue = volume
 
         // Request Audio Focus BEFORE creating MediaPlayer
+        val audioAttributes = AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_ALARM)
+            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+            .build()
+
         val focusResult = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val attr = AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_ALARM)
-                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                .build()
             audioFocusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
-                .setAudioAttributes(attr)
+                .setAudioAttributes(audioAttributes)
                 .setOnAudioFocusChangeListener(focusListener)
                 .setWillPauseWhenDucked(false)
                 .build()
@@ -809,43 +825,41 @@ class RingtoneService : Service(), TextToSpeech.OnInitListener {
 
         // MediaPlayer
         try {
-            mediaPlayer = MediaPlayer().apply {
-                setDataSource(applicationContext, uri)
-                setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_ALARM)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                        .build()
-                )
-                isLooping = true
+            withContext(Dispatchers.IO) {
+                mediaPlayer = MediaPlayer().apply {
+                    setDataSource(applicationContext, uri)
+                    setAudioAttributes(audioAttributes)
+                    @Suppress("DEPRECATION")
+                    setAudioStreamType(AudioManager.STREAM_ALARM) // Legacy fallback for better focus priority
+                    isLooping = true
 
-                // Set the volume directly on the MediaPlayer
-                if (fadeInSeconds > 0) {
-                    setVolume(0.01f, 0.01f)
-                } else {
-                    val v = perceptualVolume(volume)
-                    setVolume(v, v)
+                    // Set the volume directly on the MediaPlayer
+                    if (fadeInSeconds > 0) {
+                        setVolume(0.01f, 0.01f)
+                    } else {
+                        val v = perceptualVolume(volume)
+                        setVolume(v, v)
+                    }
+
+                    prepare()
+                    start()
                 }
-
-                prepare()
-                start()
             }
         } catch (e: Exception) {
             logger.e(TAG, "MediaPlayer failed with $uri, falling back to default", e)
             try {
-                mediaPlayer = MediaPlayer().apply {
-                    setDataSource(applicationContext, RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM))
-                    setAudioAttributes(
-                        AudioAttributes.Builder()
-                            .setUsage(AudioAttributes.USAGE_ALARM)
-                            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                            .build()
-                    )
-                    isLooping = true
-                    if (fadeInSeconds > 0) setVolume(0.01f, 0.01f)
-                    else { val v = perceptualVolume(volume); setVolume(v, v) }
-                    prepare()
-                    start()
+                withContext(Dispatchers.IO) {
+                    mediaPlayer = MediaPlayer().apply {
+                        setDataSource(applicationContext, RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM))
+                        setAudioAttributes(audioAttributes)
+                        @Suppress("DEPRECATION")
+                        setAudioStreamType(AudioManager.STREAM_ALARM)
+                        isLooping = true
+                        if (fadeInSeconds > 0) setVolume(0.01f, 0.01f)
+                        else { val v = perceptualVolume(volume); setVolume(v, v) }
+                        prepare()
+                        start()
+                    }
                 }
             } catch (e2: Exception) {
                 logger.e(TAG, "CRITICAL: Default Ringtone also failed", e2)

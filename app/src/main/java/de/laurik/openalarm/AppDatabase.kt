@@ -138,7 +138,7 @@ interface AlarmDao {
     suspend fun deleteCustomRingtone(ringtone: CustomRingtoneEntity)
     
     @Query("SELECT * FROM custom_ringtones WHERE id = :id")
-    suspend fun getCustomRingtone(id: String): CustomRingtoneEntity?
+    fun getCustomRingtone(id: String): CustomRingtoneEntity?
 }
 
 // 3. DATABASE INSTANCE

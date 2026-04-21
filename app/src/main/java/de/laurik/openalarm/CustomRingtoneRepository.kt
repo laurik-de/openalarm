@@ -106,7 +106,7 @@ object CustomRingtoneRepository {
         }
     }
 
-    suspend fun resolvePreviewUri(context: Context, rt: CustomRingtoneEntity): Uri? {
+    fun resolvePreviewUri(context: Context, rt: CustomRingtoneEntity): Uri? {
         val rootUri = Uri.parse(rt.uri)
         return if (isFolder(context, rootUri)) {
             val documentFile = DocumentFile.fromTreeUri(context, rootUri)
@@ -133,7 +133,7 @@ object CustomRingtoneRepository {
         }
     }
 
-    private suspend fun resolveFolderRingtone(
+    private fun resolveFolderRingtone(
         context: Context,
         alarm: AlarmItem,
         customRt: CustomRingtoneEntity,

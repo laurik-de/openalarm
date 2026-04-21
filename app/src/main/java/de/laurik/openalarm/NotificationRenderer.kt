@@ -166,7 +166,7 @@ object NotificationRenderer {
             .setCustomHeadsUpContentView(customView)
             .setOngoing(true)
             .setAutoCancel(false)
-            .setVibrate(longArrayOf(0L)) // near zero vibration to avoid being applied a low priority label
+            .setVibrate(longArrayOf(0L, 10L, 10L, 10L)) // tiny vibration pulse to ensure system priority
             .setColorized(true)
             .setColor(color)
 
